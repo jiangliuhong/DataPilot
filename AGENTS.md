@@ -35,50 +35,45 @@ The frontend must never access the database directly.
 
 ```text
 src/
-├── app/
-│   ├── api/
-│   ├── (dashboard)/
+├── app/                          # Backend (server-side)
+│   ├── api/                      # API route handlers
 │   ├── auth/
 │   ├── users/
 │   ├── layout.tsx
-│   └── page.tsx
+│   ├── page.tsx
+│   ├── db/                       # Database layer
+│   │   ├── index.ts
+│   │   ├── schema/
+│   │   ├── relations/
+│   │   └── migrations/
+│   └── server/                   # Business logic layer
+│       ├── services/
+│       ├── repositories/
+│       ├── schemas/
+│       ├── middleware/
+│       ├── errors/
+│       └── types/
 │
-├── api-client/
-│   ├── request.ts
-│   ├── auth.ts
-│   ├── user.ts
-│   └── ...
-│
-├── features/
-│   ├── auth/
-│   ├── user/
-│   ├── order/
-│   └── ...
-│
-├── components/
-│   ├── ui/
-│   ├── layout/
-│   └── shared/
-│
-├── db/
-│   ├── index.ts
-│   ├── schema/
-│   ├── relations/
-│   └── migrations/
-│
-├── server/
-│   ├── services/
-│   ├── repositories/
-│   ├── schemas/
-│   ├── middleware/
-│   ├── errors/
-│   └── types/
-│
-├── hooks/
-├── lib/
-├── constants/
-├── types/
-└── utils/
+├── web/                          # Frontend (client-side)
+│   ├── api-client/               # API abstraction layer
+│   │   ├── request.ts
+│   │   ├── auth.ts
+│   │   ├── user.ts
+│   │   └── ...
+│   ├── features/                 # Feature modules
+│   │   ├── auth/
+│   │   ├── user/
+│   │   ├── order/
+│   │   └── ...
+│   ├── components/               # UI components
+│   │   ├── ui/
+│   │   ├── layout/
+│   │   └── shared/
+│   ├── hooks/
+│   ├── lib/
+│   ├── constants/
+│   ├── types/
+│   └── utils/
 ```
 
 ---
@@ -278,7 +273,7 @@ Never generate:
 Location:
 
 ```text
-src/db/index.ts
+src/app/db/index.ts
 ```
 
 Only one shared database instance.
@@ -298,7 +293,7 @@ Do not create additional instances.
 Location:
 
 ```text
-src/db/schema/
+src/app/db/schema/
 ```
 
 One file per domain.
@@ -327,7 +322,7 @@ containing the entire database.
 Location:
 
 ```text
-src/db/relations/
+src/app/db/relations/
 ```
 
 Keep relations separated from table definitions.
@@ -372,7 +367,7 @@ Use Zod.
 Location:
 
 ```text
-server/schemas/
+src/app/server/schemas/
 ```
 
 Validation must be reusable.
@@ -524,10 +519,10 @@ Always use aliases.
 Preferred:
 
 ```ts
-@/server/services
-@/server/repositories
-@/db/schema
-@/components
+@/app/server/services
+@/app/server/repositories
+@/app/db/schema
+@/web/components
 ```
 
 Avoid:
