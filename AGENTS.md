@@ -4,22 +4,30 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-## Project Architecture
+# Project Overview
 
-This project uses Next.js App Router with a strict frontend/backend separation model.
+This project uses Next.js App Router with a strict frontend/backend separation architecture.
 
-### Core Principles
+Frontend and backend must communicate through HTTP APIs only.
 
-1. All backend APIs must be implemented under `app/api`.
-2. Frontend code must never access the database directly.
-3. Frontend code must never import repositories or services.
-4. Frontend communicates only through HTTP requests.
-5. Server Actions are prohibited unless explicitly requested.
-6. Database access must only occur in repositories.
-7. Business logic must only exist in services.
-8. UI components must use HeroUI.
-9. Prefer feature-based organization over technical-layer organization.
-10. Avoid large files and large components.
+All backend endpoints are implemented under `app/api`.
+
+The frontend must never access the database directly.
+
+---
+
+# Core Architecture Principles
+
+1. Frontend and backend are strictly separated.
+2. All APIs must be located under `app/api`.
+3. Frontend communicates with backend through `api-client`.
+4. Database access is allowed only inside repositories.
+5. Business logic is allowed only inside services.
+6. Route handlers must remain thin.
+7. HeroUI is the primary UI framework.
+8. Drizzle ORM is the only ORM.
+9. Feature-based organization is preferred.
+10. Avoid large files and oversized components.
 
 ---
 
@@ -29,9 +37,17 @@ This project uses Next.js App Router with a strict frontend/backend separation m
 src/
 ├── app/
 │   ├── api/
-│   ├── dashboard/
+│   ├── (dashboard)/
+│   ├── auth/
 │   ├── users/
-│   └── layout.tsx
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── api-client/
+│   ├── request.ts
+│   ├── auth.ts
+│   ├── user.ts
+│   └── ...
 │
 ├── features/
 │   ├── auth/
@@ -44,19 +60,25 @@ src/
 │   ├── layout/
 │   └── shared/
 │
-├── api-client/
+├── db/
+│   ├── index.ts
+│   ├── schema/
+│   ├── relations/
+│   └── migrations/
 │
 ├── server/
 │   ├── services/
 │   ├── repositories/
 │   ├── schemas/
 │   ├── middleware/
+│   ├── errors/
 │   └── types/
 │
 ├── hooks/
 ├── lib/
 ├── constants/
-└── types/
+├── types/
+└── utils/
 ```
 
 ---
@@ -65,7 +87,7 @@ src/
 
 ## app/
 
-Only routing concerns belong here.
+Responsible only for routing.
 
 Allowed:
 
@@ -77,11 +99,11 @@ Allowed:
 
 Forbidden:
 
-* database queries
+* Drizzle queries
 * business logic
-* Prisma calls
+* authorization logic
 * validation logic
-* complex data transformation
+* complex transformations
 
 ---
 
@@ -92,67 +114,18 @@ Acts as transport layer only.
 Responsibilities:
 
 * receive request
+* parse request
 * validate request
 * call service
 * return response
 
+Must remain thin.
+
 Must not contain:
 
-* Prisma
-* SQL
-* business rules
-* complex calculations
-
-Example:
-
-```ts
-export async function GET() {
-  const users = await userService.findAll();
-
-  return Response.json(users);
-}
-```
-
----
-
-## server/services
-
-Contains business logic.
-
-Responsibilities:
-
-* authorization
-* workflows
-* business rules
-* orchestration
-
-Services may call:
-
-* repositories
-* external APIs
-* other services
-
-Services must not:
-
-* render UI
-* contain React code
-
----
-
-## server/repositories
-
-Contains all database access.
-
-Responsibilities:
-
-* Prisma
-* SQL
-* data persistence
-
-Repositories must not:
-
-* contain business rules
-* contain authorization logic
+* database access
+* Drizzle queries
+* business logic
 
 ---
 
@@ -160,17 +133,17 @@ Repositories must not:
 
 Frontend API abstraction layer.
 
-Frontend pages and components must call api-client functions.
+Frontend code must call api-client methods.
 
-Do not use fetch directly inside pages or components unless necessary.
+Do not call fetch directly inside pages.
 
-Example:
+Preferred:
 
 ```ts
-const users = await userApi.list();
+await userApi.list();
 ```
 
-Instead of:
+Avoid:
 
 ```ts
 await fetch("/api/users");
@@ -178,34 +151,249 @@ await fetch("/api/users");
 
 ---
 
-# Feature Organization
+## services
 
-Each business domain should have its own feature folder.
+Contains business logic.
+
+Examples:
+
+* authentication
+* permissions
+* workflows
+* orchestration
+* transactions
+
+Services may call:
+
+* repositories
+* external APIs
+* other services
+
+Services must never contain UI code.
+
+---
+
+## repositories
+
+Single source of truth for database access.
+
+Responsibilities:
+
+* queries
+* inserts
+* updates
+* deletes
+
+Repositories must not contain:
+
+* permissions
+* workflows
+* business rules
+
+---
+
+# Repository First Rule
+
+Repository is the single source of truth for database access.
+
+Before creating a query:
+
+1. Search existing repositories.
+2. Reuse repository methods if possible.
+3. Extend repositories before creating new ones.
+4. Create repository methods before service methods.
+5. Never write database queries in services.
+6. Never write database queries in routes.
+7. Never duplicate query logic.
+
+Required flow:
+
+```text
+UI
+ ↓
+API Client
+ ↓
+Route
+ ↓
+Service
+ ↓
+Repository
+ ↓
+Drizzle
+ ↓
+Database
+```
+
+Forbidden:
+
+```text
+Page → Drizzle
+Component → Drizzle
+Route → Drizzle
+Service → Drizzle
+```
+
+---
+
+# Repository Ownership Rule
+
+Repositories represent domains.
+
+Allowed:
+
+```text
+user.repository.ts
+order.repository.ts
+product.repository.ts
+```
+
+Avoid:
+
+```text
+login.repository.ts
+register.repository.ts
+dashboard.repository.ts
+admin.repository.ts
+```
+
+Repository naming should follow entities, not actions.
+
+---
+
+# Drizzle ORM Rules
+
+This project uses Drizzle ORM exclusively.
+
+Never generate:
+
+* Prisma
+* TypeORM
+* Sequelize
+* MikroORM
+
+---
+
+## Database Initialization
+
+Location:
+
+```text
+src/db/index.ts
+```
+
+Only one shared database instance.
 
 Example:
 
-```text
-features/
-└── user/
-    ├── components/
-    ├── hooks/
-    ├── types.ts
-    └── constants.ts
+```ts
+export const db = drizzle(client);
 ```
 
-Feature code should remain close together.
+Do not create additional instances.
 
-Avoid creating global folders prematurely.
+---
+
+## Schema Rules
+
+Location:
+
+```text
+src/db/schema/
+```
+
+One file per domain.
+
+Preferred:
+
+```text
+schema/
+├── user.ts
+├── order.ts
+├── product.ts
+```
+
+Avoid:
+
+```text
+schema.ts
+```
+
+containing the entire database.
+
+---
+
+## Relation Rules
+
+Location:
+
+```text
+src/db/relations/
+```
+
+Keep relations separated from table definitions.
+
+---
+
+## Migration Rules
+
+All schema changes require migrations.
+
+Required workflow:
+
+```bash
+drizzle-kit generate
+drizzle-kit migrate
+```
+
+Never manually edit generated migrations.
+
+---
+
+## Transaction Rules
+
+Transactions belong in services.
+
+Example:
+
+```ts
+await db.transaction(async (tx) => {
+  ...
+});
+```
+
+Do not place transaction logic inside route handlers.
+
+---
+
+# Validation Rules
+
+Use Zod.
+
+Location:
+
+```text
+server/schemas/
+```
+
+Validation must be reusable.
+
+Used by:
+
+* API routes
+* forms
+* services
+
+Avoid duplicated validation logic.
 
 ---
 
 # HeroUI Rules
 
-HeroUI is the primary UI framework.
+HeroUI is the default UI framework.
 
-Use HeroUI components whenever available.
+Use HeroUI whenever possible.
 
-Preferred:
+Preferred components:
 
 * Button
 * Input
@@ -215,47 +403,40 @@ Preferred:
 * Table
 * Tabs
 * Dropdown
+* Form
+* Navbar
 
 Avoid custom implementations when HeroUI already provides the component.
-
-Only build custom components when:
-
-* HeroUI does not provide it
-* project-specific behavior is required
-
-Maintain consistent HeroUI styling across the application.
 
 ---
 
 # Component Rules
 
-## Component Size
-
 Preferred:
 
-* < 150 lines
+* less than 150 lines
 
 Warning:
 
-* > 200 lines
+* over 200 lines
 
-Must Refactor:
+Must refactor:
 
-* > 300 lines
+* over 300 lines
 
 Split into:
 
-* presentational components
+* components
 * hooks
 * utility functions
 
 ---
 
-## Page Size
+# Page Rules
 
 Preferred:
 
-* < 100 lines
+* under 100 lines
 
 Maximum:
 
@@ -263,26 +444,45 @@ Maximum:
 
 Pages should compose components.
 
-Pages should not contain large amounts of business logic.
+Pages should not contain business logic.
 
 ---
 
-# Service Size
+# Route Rules
 
 Preferred:
 
-* < 200 lines
+* under 50 lines
+
+Maximum:
+
+* 100 lines
+
+Routes should:
+
+* validate
+* call service
+* return response
+
+Nothing more.
+
+---
+
+# Service Rules
+
+Preferred:
+
+* under 200 lines
 
 Maximum:
 
 * 300 lines
 
-Large services must be split into multiple services.
+Split large services.
 
 Example:
 
 ```text
-user.service.ts
 user-create.service.ts
 user-update.service.ts
 user-auth.service.ts
@@ -290,150 +490,158 @@ user-auth.service.ts
 
 ---
 
-# Repository Size
+# Repository Rules
 
 Preferred:
 
-* < 200 lines
+* under 200 lines
 
 Maximum:
 
 * 300 lines
 
-Repositories should focus on a single aggregate/domain.
+Repositories should focus on one domain.
 
 ---
 
-# API Route Size
-
-Preferred:
-
-* < 50 lines
-
-Maximum:
-
-* 100 lines
-
-Route handlers should remain thin.
-
----
-
-# Validation
-
-Use Zod for all validation.
-
-Validation schemas belong in:
-
-```text
-server/schemas/
-```
-
-Never duplicate validation logic.
-
-Reuse schemas across:
-
-* API routes
-* forms
-* services
-
----
-
-# State Management
+# State Management Rules
 
 Default:
 
 * React State
 * React Context
 
-Use Zustand only when shared state becomes complex.
+Use Zustand only when necessary.
 
 Do not introduce Redux unless explicitly required.
 
 ---
 
-# Data Fetching
+# Import Rules
 
-Client Components:
-
-```ts
-api-client/*
-```
-
-Server Components:
-
-```ts
-api-client/*
-```
-
-Always consume APIs through the api-client layer.
-
-Do not access repositories or services directly from UI.
-
----
-
-# Imports
+Always use aliases.
 
 Preferred:
 
 ```ts
-@/features/user
-@/components/ui
 @/server/services
-```
-
-Avoid deep relative imports.
-
-Bad:
-
-```ts
-../../../../../components
-```
-
-Good:
-
-```ts
+@/server/repositories
+@/db/schema
 @/components
 ```
 
----
+Avoid:
 
-# Database Access Rule
-
-Allowed:
-
-```text
-Repository
-  ↓
-Prisma
+```ts
+../../../../components
 ```
-
-Forbidden:
-
-```text
-Page → Prisma
-Component → Prisma
-Service → Prisma
-API Route → Prisma
-```
-
-Only repositories may access Prisma.
 
 ---
 
-# Code Generation Rules
+# Naming Rules
+
+Tables:
+
+```ts
+users
+orders
+products
+```
+
+Columns:
+
+```ts
+userId
+createdAt
+updatedAt
+deletedAt
+```
+
+Repositories:
+
+```ts
+user.repository.ts
+order.repository.ts
+```
+
+Services:
+
+```ts
+user.service.ts
+order.service.ts
+```
+
+Schemas:
+
+```ts
+user.schema.ts
+order.schema.ts
+```
+
+---
+
+# Pagination Rules
+
+List APIs must support pagination.
+
+Preferred:
+
+```ts
+limit
+offset
+```
+
+or
+
+```ts
+cursor
+```
+
+Never return unbounded datasets.
+
+---
+
+# Soft Delete Rules
+
+Prefer soft delete.
+
+Standard field:
+
+```ts
+deletedAt
+```
+
+Repository queries should exclude soft-deleted records by default.
+
+---
+
+# AI Code Generation Rules
 
 When generating code:
 
-1. Follow existing project structure.
-2. Reuse existing services before creating new ones.
-3. Reuse existing repositories before creating new ones.
+1. Follow the existing architecture.
+2. Reuse repositories first.
+3. Reuse services first.
 4. Use HeroUI for UI.
-5. Prefer composition over large files.
-6. Do not create files exceeding size limits.
-7. Keep route handlers thin.
-8. Keep pages focused on rendering.
-9. Keep business logic inside services.
-10. Keep database logic inside repositories.
+5. Use Drizzle ORM only.
+6. Keep routes thin.
+7. Keep business logic in services.
+8. Keep queries in repositories.
+9. Avoid large files.
+10. Generate maintainable code over clever code.
+11. Prefer composition over inheritance.
+12. Prefer explicit code over abstraction.
+13. Do not create duplicate functionality.
+14. Always check existing modules before creating new ones.
+15. Maintain consistent naming conventions.
 
 ```
 ```
+
+# NON-NEGOTIABLE RULES
+
+1. Never access Drizzle outside repositories.
+2. Never place business logic in route handlers.
+3. Frontend must call APIs through api-client.
+4. Use HeroUI whenever possible.
+5. Reuse existing repositories and services before creating new ones.
