@@ -1,10 +1,6 @@
-import { Button } from "@heroui/react";
+import AppLayout from "@/web/components/layout/app-layout";
+import { menuItems } from "@/web/constants/menu-config";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-3xl font-semibold mb-6">DataPilot</h1>
-      <Button variant="primary">Get Started</Button>
-    </div>
-  );
+  return <AppLayout menuItems={menuItems} />;
 }

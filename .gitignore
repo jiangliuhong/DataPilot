@@ -56,3 +56,5 @@ next-env.d.ts
 
 # Claude Code
 .claude/
+.agents
+skill-lock.json
