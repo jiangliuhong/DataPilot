@@ -1,5 +1,4 @@
 // Re-export all schema tables here
-// Example:
-// export * from "./user";
-
-export {};
+export * from "./dbt-project";
+export * from "./dbt-directory";
+export * from "./dbt-file";

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataPilot - dbt 项目管理 API 文档</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a202c;
+      --text-secondary: #718096;
+      --accent: #3182ce;
+      --accent-light: #ebf8ff;
+      --green: #38a169;
+      --green-bg: #f0fff4;
+      --orange: #dd6b20;
+      --orange-bg: #fffaf0;
+      --red: #e53e3e;
+      --red-bg: #fff5f5;
+      --purple: #805ad5;
+      --purple-bg: #faf5ff;
+      --code-bg: #edf2f7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* 导航 */
+    .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; background: var(--card-bg); border-right: 1px solid var(--border); overflow-y: auto; padding: 24px 16px; z-index: 10; }
+    .sidebar h2 { font-size: 18px; margin-bottom: 16px; color: var(--accent); }
+    .sidebar a { display: block; padding: 6px 12px; color: var(--text-secondary); text-decoration: none; font-size: 14px; border-radius: 6px; }
+    .sidebar a:hover { background: var(--accent-light); color: var(--accent); }
+    .sidebar .group { font-weight: 600; color: var(--text); margin-top: 16px; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* 主内容 */
+    .main { margin-left: 280px; padding: 32px 40px; max-width: 960px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 32px; font-size: 16px; }
+
+    /* 端点卡片 */
+    .endpoint { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
+    .endpoint-header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+    .method { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .method-get { background: var(--green-bg); color: var(--green); }
+    .method-post { background: var(--accent-light); color: var(--accent); }
+    .method-put { background: var(--orange-bg); color: var(--orange); }
+    .method-delete { background: var(--red-bg); color: var(--red); }
+    .endpoint-path { font-family: "SF Mono", "Fira Code", monospace; font-size: 15px; font-weight: 600; }
+    .endpoint-body { padding: 20px; }
+    .endpoint-body h4 { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .endpoint-body h4:not(:first-child) { margin-top: 16px; }
+
+    /* 参数表格 */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 8px 12px; background: var(--code-bg); font-weight: 600; font-size: 13px; }
+    td { padding: 8px 12px; border-top: 1px solid var(--border); }
+    code { font-family: "SF Mono", "Fira Code", monospace; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+    /* 代码块 */
+    pre { background: #1a202c; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin-top: 8px; }
+    pre .key { color: #90cdf4; }
+    pre .str { color: #9ae6b4; }
+    pre .num { color: #faf089; }
+
+    /* 状态码标签 */
+    .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+    .status-2xx { background: var(--green-bg); color: var(--green); }
+    .status-4xx { background: var(--orange-bg); color: var(--orange); }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2>📍 API 文档</h2>
+  <div class="group">项目管理</div>
+  <a href="#create-project">POST /projects</a>
+  <a href="#list-projects">GET /projects</a>
+  <a href="#get-project">GET /projects/:id</a>
+  <a href="#update-project">PUT /projects/:id</a>
+  <a href="#delete-project">DELETE /projects/:id</a>
+  <div class="group">目录管理</div>
+  <a href="#create-directory">POST /projects/:id/directories</a>
+  <a href="#list-directories">GET /projects/:id/directories</a>
+  <a href="#get-tree">GET /projects/:id/tree</a>
+  <a href="#update-directory">PUT /projects/:id/directories/:dirId</a>
+  <a href="#delete-directory">DELETE /projects/:id/directories/:dirId</a>
+  <div class="group">文件管理</div>
+  <a href="#create-file">POST /projects/:id/files</a>
+  <a href="#list-files">GET /projects/:id/files</a>
+  <a href="#get-file">GET /projects/:id/files/:fileId</a>
+  <a href="#update-file">PUT /projects/:id/files/:fileId</a>
+  <a href="#delete-file">DELETE /projects/:id/files/:fileId</a>
+  <div class="group">导入导出</div>
+  <a href="#import-project">POST /projects/:id/import</a>
+  <a href="#export-project">GET /projects/:id/export</a>
+</nav>
+
+<main class="main">
+  <h1>dbt 项目管理 API</h1>
+  <p class="subtitle">DataPilot 后端接口文档 — 所有接口前缀：<code>/api/dbt</code></p>
+
+  <!-- ==================== 项目管理 ==================== -->
+
+  <div class="endpoint" id="create-project">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/projects</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>创建新的 dbt 项目。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>项目名称，唯一，最长 255 字符</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>否</td><td>项目描述</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name": "analytics_project", "description": "核心分析项目"}'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"name"</span>: <span class="str">"analytics_project"</span>,
+  <span class="key">"description"</span>: <span class="str">"核心分析项目"</span>,
+  <span class="key">"status"</span>: <span class="str">"active"</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2026-06-05T10:00:00.000Z"</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-05T10:00:00.000Z"</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 参数验证失败</p>
+      <p><span class="status status-4xx">409</span> 项目名称已存在 <code>{"error": "Project name already exists"}</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-projects">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取项目列表，支持分页和状态过滤。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量，最大 100</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td>-</td><td>过滤状态：<code>active</code> 或 <code>archived</code></td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl http://localhost:3000/api/dbt/projects?limit=10&amp;offset=0&amp;status=active</pre>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [{ <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"..."</span>, ... }],
+  <span class="key">"total"</span>: <span class="num">15</span>,
+  <span class="key">"limit"</span>: <span class="num">10</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-project">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取单个项目详情。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>项目 ID</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回完整项目对象（同创建响应）。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> <code>{"error": "Project not found"}</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-project">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/projects/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>更新项目信息。可更新名称、描述或状态。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新项目名称</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>新项目描述</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>active</code> 或 <code>archived</code></td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "new_name", "status": "archived"}'</pre>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回更新后的项目对象。</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-project">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/projects/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>软删除项目。项目及其所有目录和文件将被标记为已删除，后续查询不再返回。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> <code>{"error": "Project not found"}</code></p>
+    </div>
+  </div>
+
+  <!-- ==================== 目录管理 ==================== -->
+
+  <div class="endpoint" id="create-directory">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/directories</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>在项目内创建目录。系统自动计算 <code>path</code> 和 <code>depth</code>。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>目录名，仅允许字母、数字、下划线、连字符、点</td></tr>
+        <tr><td><code>parentId</code></td><td>number | null</td><td>否</td><td>父目录 ID，null 或不传表示根目录</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/directories \
+  -H "Content-Type: application/json" \
+  -d '{"name": "models", "parentId": null}'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"projectId"</span>: <span class="num">1</span>,
+  <span class="key">"parentId"</span>: <span class="num">null</span>,
+  <span class="key">"name"</span>: <span class="str">"models"</span>,
+  <span class="key">"path"</span>: <span class="str">"models"</span>,
+  <span class="key">"depth"</span>: <span class="num">0</span>,
+  <span class="key">"sortOrder"</span>: <span class="num">0</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"..."</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"..."</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+      <h4>创建嵌套目录示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/directories \
+  -H "Content-Type: application/json" \
+  -d '{"name": "staging", "parentId": 1}'</pre>
+      <p>结果：<code>path = "models/staging"</code>，<code>depth = 1</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-directories">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/directories</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取项目下的目录列表。可通过 <code>parentId</code> 过滤指定层级的目录。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>parentId</code></td><td>number | null</td><td>过滤指定父目录下的直接子目录</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回目录对象数组。</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-tree">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/tree</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取项目的完整嵌套目录树。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>[
+  {
+    <span class="key">"id"</span>: <span class="num">1</span>,
+    <span class="key">"name"</span>: <span class="str">"models"</span>,
+    <span class="key">"path"</span>: <span class="str">"models"</span>,
+    <span class="key">"children"</span>: [
+      {
+        <span class="key">"id"</span>: <span class="num">2</span>,
+        <span class="key">"name"</span>: <span class="str">"staging"</span>,
+        <span class="key">"path"</span>: <span class="str">"models/staging"</span>,
+        <span class="key">"children"</span>: []
+      }
+    ]
+  }
+]</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-directory">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/directories/:dirId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>重命名或移动目录。重命名/移动时，系统自动级联更新所有子目录和文件的 <code>path</code>。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新目录名（重命名）</td></tr>
+        <tr><td><code>parentId</code></td><td>number | null</td><td>新的父目录 ID（移动）</td></tr>
+      </table>
+      <h4>重命名示例</h4>
+<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/directories/2 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "staging_new"}'</pre>
+      <h4>移动示例</h4>
+<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/directories/2 \
+  -H "Content-Type: application/json" \
+  -d '{"parentId": 5}'</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 不能移动到自身或后代目录 <code>{"error": "Cannot move directory to itself or its descendant"}</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-directory">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/directories/:dirId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>级联软删除目录及其所有子目录和文件。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+    </div>
+  </div>
+
+  <!-- ==================== 文件管理 ==================== -->
+
+  <div class="endpoint" id="create-file">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/files</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>创建文件。系统根据扩展名自动检测 <code>fileType</code>，自动计算 <code>size</code> 和 <code>path</code>。支持的类型：<code>sql, yml, yaml, md, py, csv, json, txt</code>。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>文件名（含扩展名）</td></tr>
+        <tr><td><code>content</code></td><td>string</td><td>否</td><td>文件内容，默认空字符串</td></tr>
+        <tr><td><code>directoryId</code></td><td>number | null</td><td>否</td><td>所属目录 ID，null 表示项目根目录</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/files \
+  -H "Content-Type: application/json" \
+  -d '{"name": "stg_users.sql", "directoryId": 2, "content": "SELECT * FROM users"}'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"projectId"</span>: <span class="num">1</span>,
+  <span class="key">"directoryId"</span>: <span class="num">2</span>,
+  <span class="key">"name"</span>: <span class="str">"stg_users.sql"</span>,
+  <span class="key">"path"</span>: <span class="str">"models/staging/stg_users.sql"</span>,
+  <span class="key">"content"</span>: <span class="str">"SELECT * FROM users"</span>,
+  <span class="key">"fileType"</span>: <span class="str">"sql"</span>,
+  <span class="key">"size"</span>: <span class="num">20</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"..."</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"..."</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-files">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/files</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取项目文件列表，支持分页和类型/目录过滤。<strong>列表响应不含 <code>content</code> 字段</strong>。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+        <tr><td><code>fileType</code></td><td>string</td><td>-</td><td>按文件类型过滤，如 <code>sql</code></td></tr>
+        <tr><td><code>directoryId</code></td><td>number</td><td>-</td><td>按目录 ID 过滤</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [
+    { <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"stg_users.sql"</span>, <span class="key">"path"</span>: <span class="str">"..."</span>, <span class="key">"fileType"</span>: <span class="str">"sql"</span>, <span class="key">"size"</span>: <span class="num">20</span>, ... }
+  ],
+  <span class="key">"total"</span>: <span class="num">50</span>,
+  <span class="key">"limit"</span>: <span class="num">20</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-file">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/files/:fileId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取文件详情，包含完整 <code>content</code> 内容。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回完整文件对象（同创建响应）。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> <code>{"error": "File not found"}</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-file">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/files/:fileId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>更新文件内容、名称或移动到其他目录。<code>path</code> 和 <code>size</code> 自动重算。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新文件名</td></tr>
+        <tr><td><code>content</code></td><td>string</td><td>新文件内容</td></tr>
+        <tr><td><code>directoryId</code></td><td>number | null</td><td>移动到新目录</td></tr>
+      </table>
+      <h4>更新内容示例</h4>
+<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/files/1 \
+  -H "Content-Type: application/json" \
+  -d '{"content": "SELECT id, name FROM users WHERE active = true"}'</pre>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回更新后的文件对象。</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-file">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/files/:fileId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>软删除文件。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+    </div>
+  </div>
+
+  <!-- ==================== 导入导出 ==================== -->
+
+  <div class="endpoint" id="import-project">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/import</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>上传 ZIP 压缩包导入 dbt 工程。系统解析 ZIP 中的目录结构和文件内容，存入数据库。<code>dbt_project.yml</code> 和 <code>packages.yml</code> 会被自动跳过。导入操作在数据库事务中执行，失败时全部回滚。</p>
+      <h4>请求 (multipart/form-data)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>file</code></td><td>File</td><td>ZIP 压缩包，最大 50MB</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/import \
+  -F "file=@my_dbt_project.zip"</pre>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"directories"</span>: <span class="num">12</span>,
+  <span class="key">"files"</span>: <span class="num">35</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 文件格式错误 <code>{"error": "Invalid file format, only ZIP is supported"}</code></p>
+      <p><span class="status status-4xx">413</span> 文件过大 <code>{"error": "File size exceeds limit (50MB)"}</code></p>
+      <p><span class="status status-4xx">404</span> 项目不存在 <code>{"error": "Project not found"}</code></p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="export-project">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/export</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>将项目导出为标准 dbt 工程目录结构的 ZIP 文件。</p>
+      <h4>请求示例</h4>
+<pre>curl -O http://localhost:3000/api/dbt/projects/1/export</pre>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回 ZIP 文件下载。</p>
+      <table>
+        <tr><th>响应头</th><th>值</th></tr>
+        <tr><td><code>Content-Type</code></td><td><code>application/zip</code></td></tr>
+        <tr><td><code>Content-Disposition</code></td><td><code>attachment; filename="project_name.zip"</code></td></tr>
+      </table>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> <code>{"error": "Project not found"}</code></p>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>
