@@ -8,6 +8,13 @@
       "when": 1780589715072,
       "tag": "0000_sleepy_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780678000000,
+      "tag": "0001_add_dbt_environment_tables",
+      "breakpoints": true
     }
   ]
 }
