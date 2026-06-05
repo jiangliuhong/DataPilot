@@ -91,6 +91,28 @@
   <a href="#get-file">GET /projects/:id/files/:fileId</a>
   <a href="#update-file">PUT /projects/:id/files/:fileId</a>
   <a href="#delete-file">DELETE /projects/:id/files/:fileId</a>
+  <div class="group">dbt 版本管理</div>
+  <a href="#create-version">POST /versions</a>
+  <a href="#list-versions">GET /versions</a>
+  <a href="#get-version">GET /versions/:id</a>
+  <a href="#update-version">PUT /versions/:id</a>
+  <a href="#delete-version">DELETE /versions/:id</a>
+  <div class="group">数据库连接管理</div>
+  <a href="#create-connection">POST /connections</a>
+  <a href="#list-connections">GET /connections</a>
+  <a href="#get-connection">GET /connections/:id</a>
+  <a href="#update-connection">PUT /connections/:id</a>
+  <a href="#delete-connection">DELETE /connections/:id</a>
+  <div class="group">运行环境管理</div>
+  <a href="#create-environment">POST /environments</a>
+  <a href="#list-environments">GET /environments</a>
+  <a href="#get-environment">GET /environments/:id</a>
+  <a href="#update-environment">PUT /environments/:id</a>
+  <a href="#delete-environment">DELETE /environments/:id</a>
+  <div class="group">项目环境绑定</div>
+  <a href="#list-project-environments">GET /projects/:id/environments</a>
+  <a href="#bind-environment">POST /projects/:id/environments</a>
+  <a href="#unbind-environment">DELETE /projects/:id/environments/:envId</a>
   <div class="group">导入导出</div>
   <a href="#import-project">POST /projects/:id/import</a>
   <a href="#export-project">GET /projects/:id/export</a>
@@ -463,6 +485,518 @@
       <p>软删除文件。</p>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
 <pre>{"success": true}</pre>
+    </div>
+  </div>
+
+  <!-- ==================== dbt 版本管理 ==================== -->
+
+  <div class="endpoint" id="create-version">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/versions</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>创建 dbt Core 版本，定义适配器包和 Python 依赖。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>版本名称，唯一，最长 255 字符</td></tr>
+        <tr><td><code>version</code></td><td>string</td><td>是</td><td>语义化版本号，最长 50 字符</td></tr>
+        <tr><td><code>adapterPackages</code></td><td>array</td><td>是</td><td>适配器包列表，至少 1 个</td></tr>
+        <tr><td><code>adapterPackages[].name</code></td><td>string</td><td>是</td><td>适配器包名称</td></tr>
+        <tr><td><code>adapterPackages[].version</code></td><td>string</td><td>是</td><td>适配器包版本</td></tr>
+        <tr><td><code>adapterPackages[].supportedDatabases</code></td><td>string[]</td><td>是</td><td>支持的数据库类型列表</td></tr>
+        <tr><td><code>dependencies</code></td><td>array</td><td>是</td><td>Python 依赖列表，至少 1 个</td></tr>
+        <tr><td><code>dependencies[].name</code></td><td>string</td><td>是</td><td>依赖包名称</td></tr>
+        <tr><td><code>dependencies[].version</code></td><td>string</td><td>是</td><td>依赖包版本</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/versions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "dbt-core-1.8",
+    "version": "1.8.0",
+    "adapterPackages": [
+      {
+        "name": "dbt-mysql",
+        "version": "1.8.0",
+        "supportedDatabases": ["mysql5", "mysql8"]
+      }
+    ],
+    "dependencies": [
+      { "name": "dbt-core", "version": "1.8.0" }
+    ]
+  }'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"name"</span>: <span class="str">"dbt-core-1.8"</span>,
+  <span class="key">"version"</span>: <span class="str">"1.8.0"</span>,
+  <span class="key">"adapterPackages"</span>: [{ <span class="key">"name"</span>: <span class="str">"dbt-mysql"</span>, <span class="key">"version"</span>: <span class="str">"1.8.0"</span>, <span class="key">"supportedDatabases"</span>: [<span class="str">"mysql5"</span>, <span class="str">"mysql8"</span>] }],
+  <span class="key">"dependencies"</span>: [{ <span class="key">"name"</span>: <span class="str">"dbt-core"</span>, <span class="key">"version"</span>: <span class="str">"1.8.0"</span> }],
+  <span class="key">"status"</span>: <span class="str">"active"</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 参数验证失败</p>
+      <p><span class="status status-4xx">409</span> 版本名称已存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-versions">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/versions</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取 dbt 版本列表，支持分页和过滤。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量，最大 100</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+        <tr><td><code>version</code></td><td>string</td><td>-</td><td>按版本号过滤</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td>-</td><td>过滤状态：<code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [{ <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"..."</span>, ... }],
+  <span class="key">"total"</span>: <span class="num">5</span>,
+  <span class="key">"limit"</span>: <span class="num">20</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-version">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/versions/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取单个版本详情。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>版本 ID</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回完整版本对象（同创建响应）。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 版本不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-version">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/versions/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>更新版本信息。可更新名称、版本号、适配器包、依赖或状态。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新版本名称</td></tr>
+        <tr><td><code>version</code></td><td>string</td><td>新版本号</td></tr>
+        <tr><td><code>adapterPackages</code></td><td>array</td><td>新适配器包列表</td></tr>
+        <tr><td><code>dependencies</code></td><td>array</td><td>新依赖列表</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回更新后的版本对象。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 版本不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-version">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/versions/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>软删除版本。如果版本被运行环境引用则删除失败。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 版本不存在</p>
+      <p><span class="status status-4xx">409</span> 版本被引用，无法删除</p>
+    </div>
+  </div>
+
+  <!-- ==================== 数据库连接管理 ==================== -->
+
+  <div class="endpoint" id="create-connection">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/connections</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>创建数据库连接。密码使用 AES-256-GCM 加密存储。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>连接名称，唯一，最长 255 字符</td></tr>
+        <tr><td><code>databaseType</code></td><td>string</td><td>是</td><td>数据库类型：<code>mysql5</code>、<code>mysql8</code>、<code>starrocks</code>、<code>postgresql</code></td></tr>
+        <tr><td><code>host</code></td><td>string</td><td>是</td><td>主机地址</td></tr>
+        <tr><td><code>port</code></td><td>number</td><td>是</td><td>端口号，1-65535</td></tr>
+        <tr><td><code>databaseName</code></td><td>string</td><td>是</td><td>数据库名称</td></tr>
+        <tr><td><code>schemaName</code></td><td>string</td><td>否</td><td>Schema 名称</td></tr>
+        <tr><td><code>username</code></td><td>string</td><td>是</td><td>用户名</td></tr>
+        <tr><td><code>password</code></td><td>string</td><td>是</td><td>密码（明文传入，服务端加密存储）</td></tr>
+        <tr><td><code>extraConfig</code></td><td>object</td><td>否</td><td>额外配置，键值对</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/connections \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "prod_mysql",
+    "databaseType": "mysql8",
+    "host": "10.0.0.1",
+    "port": 3306,
+    "databaseName": "analytics",
+    "username": "dbt_user",
+    "password": "secret123"
+  }'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"name"</span>: <span class="str">"prod_mysql"</span>,
+  <span class="key">"databaseType"</span>: <span class="str">"mysql8"</span>,
+  <span class="key">"host"</span>: <span class="str">"10.0.0.1"</span>,
+  <span class="key">"port"</span>: <span class="num">3306</span>,
+  <span class="key">"databaseName"</span>: <span class="str">"analytics"</span>,
+  <span class="key">"schemaName"</span>: <span class="num">null</span>,
+  <span class="key">"username"</span>: <span class="str">"dbt_user"</span>,
+  <span class="key">"status"</span>: <span class="str">"active"</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 参数验证失败</p>
+      <p><span class="status status-4xx">409</span> 连接名称已存在</p>
+      <p><span class="status status-4xx">500</span> 加密密钥未配置（<code>DBT_ENCRYPTION_KEY</code>）</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-connections">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/connections</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取数据库连接列表，支持分页和类型/状态过滤。<strong>响应不含密码字段</strong>。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量，最大 100</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+        <tr><td><code>databaseType</code></td><td>string</td><td>-</td><td>按数据库类型过滤：<code>mysql5</code>、<code>mysql8</code>、<code>starrocks</code>、<code>postgresql</code></td></tr>
+        <tr><td><code>status</code></td><td>string</td><td>-</td><td>过滤状态：<code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [{ <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"prod_mysql"</span>, ... }],
+  <span class="key">"total"</span>: <span class="num">8</span>,
+  <span class="key">"limit"</span>: <span class="num">20</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-connection">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/connections/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取单个连接详情。<strong>响应不含密码字段</strong>。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>连接 ID</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回完整连接对象（不含密码，同列表中的对象结构）。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 连接不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-connection">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/connections/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>更新连接信息。所有字段均可选，仅更新传入的字段。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新连接名称</td></tr>
+        <tr><td><code>databaseType</code></td><td>string</td><td>新数据库类型</td></tr>
+        <tr><td><code>host</code></td><td>string</td><td>新主机地址</td></tr>
+        <tr><td><code>port</code></td><td>number</td><td>新端口号</td></tr>
+        <tr><td><code>databaseName</code></td><td>string</td><td>新数据库名称</td></tr>
+        <tr><td><code>schemaName</code></td><td>string</td><td>新 Schema 名称</td></tr>
+        <tr><td><code>username</code></td><td>string</td><td>新用户名</td></tr>
+        <tr><td><code>password</code></td><td>string</td><td>新密码</td></tr>
+        <tr><td><code>extraConfig</code></td><td>object</td><td>新额外配置</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回更新后的连接对象。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 连接不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-connection">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/connections/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>软删除连接。如果连接被运行环境引用则删除失败。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 连接不存在</p>
+      <p><span class="status status-4xx">409</span> 连接被引用，无法删除</p>
+    </div>
+  </div>
+
+  <!-- ==================== 运行环境管理 ==================== -->
+
+  <div class="endpoint" id="create-environment">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/environments</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>创建运行环境，将 dbt 版本与数据库连接关联。需确保版本和连接均存在且适配器支持该数据库类型。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>是</td><td>环境名称，唯一，最长 255 字符</td></tr>
+        <tr><td><code>versionId</code></td><td>number</td><td>是</td><td>关联的 dbt 版本 ID</td></tr>
+        <tr><td><code>connectionId</code></td><td>number</td><td>是</td><td>关联的数据库连接 ID</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/environments \
+  -H "Content-Type: application/json" \
+  -d '{"name": "production", "versionId": 1, "connectionId": 1}'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"name"</span>: <span class="str">"production"</span>,
+  <span class="key">"versionId"</span>: <span class="num">1</span>,
+  <span class="key">"connectionId"</span>: <span class="num">1</span>,
+  <span class="key">"status"</span>: <span class="str">"active"</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"deletedAt"</span>: <span class="num">null</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 参数验证失败 / 版本或连接不存在 / 适配器不支持该数据库类型</p>
+      <p><span class="status status-4xx">409</span> 环境名称已存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="list-environments">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/environments</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取运行环境列表，支持分页和状态过滤。</p>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量，最大 100</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td>-</td><td>过滤状态：<code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [{ <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"production"</span>, ... }],
+  <span class="key">"total"</span>: <span class="num">3</span>,
+  <span class="key">"limit"</span>: <span class="num">20</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="endpoint" id="get-environment">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/environments/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>获取单个运行环境详情。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>环境 ID</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回完整环境对象（同创建响应）。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 运行环境不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="update-environment">
+    <div class="endpoint-header">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/dbt/environments/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>更新运行环境。可更新名称、版本、连接或状态。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>新环境名称</td></tr>
+        <tr><td><code>versionId</code></td><td>number</td><td>新 dbt 版本 ID</td></tr>
+        <tr><td><code>connectionId</code></td><td>number</td><td>新数据库连接 ID</td></tr>
+        <tr><td><code>status</code></td><td>string</td><td><code>active</code> 或 <code>inactive</code></td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+      <p>返回更新后的环境对象。</p>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 运行环境不存在</p>
+      <p><span class="status status-4xx">400</span> 版本或连接不存在 / 适配器不支持该数据库类型</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="delete-environment">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/environments/:id</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>软删除运行环境。如果环境已被项目绑定则删除失败。</p>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 运行环境不存在</p>
+      <p><span class="status status-4xx">409</span> 环境已被项目绑定，无法删除</p>
+    </div>
+  </div>
+
+  <!-- ==================== 项目环境绑定 ==================== -->
+
+  <div class="endpoint" id="list-project-environments">
+    <div class="endpoint-header">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/environments</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>查看项目绑定的运行环境列表，支持分页。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>项目 ID</td></tr>
+      </table>
+      <h4>查询参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>limit</code></td><td>number</td><td>20</td><td>每页数量</td></tr>
+        <tr><td><code>offset</code></td><td>number</td><td>0</td><td>偏移量</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{
+  <span class="key">"items"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="num">1</span>,
+      <span class="key">"projectId"</span>: <span class="num">1</span>,
+      <span class="key">"environmentId"</span>: <span class="num">1</span>,
+      <span class="key">"environmentAlias"</span>: <span class="str">"prod"</span>,
+      <span class="key">"createdAt"</span>: <span class="str">"..."</span>,
+      <span class="key">"updatedAt"</span>: <span class="str">"..."</span>
+    }
+  ],
+  <span class="key">"total"</span>: <span class="num">2</span>,
+  <span class="key">"limit"</span>: <span class="num">20</span>,
+  <span class="key">"offset"</span>: <span class="num">0</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 项目不存在</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="bind-environment">
+    <div class="endpoint-header">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/environments</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>将运行环境绑定到项目。同一项目不能重复绑定同一环境。</p>
+      <h4>请求 Body (JSON)</h4>
+      <table>
+        <tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>environmentId</code></td><td>number</td><td>是</td><td>要绑定的运行环境 ID</td></tr>
+        <tr><td><code>environmentAlias</code></td><td>string</td><td>否</td><td>环境别名，最长 255 字符</td></tr>
+      </table>
+      <h4>请求示例</h4>
+<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/environments \
+  -H "Content-Type: application/json" \
+  -d '{"environmentId": 1, "environmentAlias": "prod"}'</pre>
+      <h4>成功响应 <span class="status status-2xx">201</span></h4>
+<pre>{
+  <span class="key">"id"</span>: <span class="num">1</span>,
+  <span class="key">"projectId"</span>: <span class="num">1</span>,
+  <span class="key">"environmentId"</span>: <span class="num">1</span>,
+  <span class="key">"environmentAlias"</span>: <span class="str">"prod"</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>,
+  <span class="key">"updatedAt"</span>: <span class="str">"2026-06-06T10:00:00.000Z"</span>
+}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">400</span> 参数验证失败</p>
+      <p><span class="status status-4xx">404</span> 项目或环境不存在</p>
+      <p><span class="status status-4xx">409</span> 环境已绑定到该项目</p>
+    </div>
+  </div>
+
+  <div class="endpoint" id="unbind-environment">
+    <div class="endpoint-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="endpoint-path">/api/dbt/projects/:id/environments/:envId</span>
+    </div>
+    <div class="endpoint-body">
+      <h4>说明</h4>
+      <p>解除项目与运行环境的绑定。</p>
+      <h4>路径参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>id</code></td><td>number</td><td>项目 ID</td></tr>
+        <tr><td><code>envId</code></td><td>number</td><td>绑定记录 ID（非环境 ID）</td></tr>
+      </table>
+      <h4>成功响应 <span class="status status-2xx">200</span></h4>
+<pre>{"success": true}</pre>
+      <h4>错误响应</h4>
+      <p><span class="status status-4xx">404</span> 绑定记录不存在</p>
     </div>
   </div>
 
