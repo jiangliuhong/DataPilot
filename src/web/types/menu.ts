@@ -3,4 +3,6 @@ export interface MenuItem {
   label: string;
   icon?: string;
   badge?: string;
+  group?: string;
+  children?: MenuItem[];
 }

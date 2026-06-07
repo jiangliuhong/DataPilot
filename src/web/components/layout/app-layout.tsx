@@ -12,6 +12,12 @@ interface AppLayoutProps {
 export default function AppLayout({ menuItems }: AppLayoutProps) {
   const [activeKey, setActiveKey] = useState<string>("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const [viewParams, setViewParams] = useState<Record<string, unknown>>({});
+
+  const handleViewChange = (key: string, params?: Record<string, unknown>) => {
+    setActiveKey(key);
+    if (params) setViewParams(params);
+  };
 
   return (
     <div className="flex h-screen">
@@ -32,7 +38,11 @@ export default function AppLayout({ menuItems }: AppLayoutProps) {
 
       {/* Right content area */}
       <main className="flex-1 overflow-y-auto bg-background">
-        <ContentPanel activeKey={activeKey} />
+        <ContentPanel
+          activeKey={activeKey}
+          onViewChange={handleViewChange}
+          viewParams={viewParams}
+        />
       </main>
     </div>
   );

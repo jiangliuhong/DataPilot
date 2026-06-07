@@ -1,15 +1,20 @@
 "use client";
 
-import { ScrollShadow } from "@heroui/react";
+import { Button, ScrollShadow } from "@heroui/react";
 import {
   LayoutDashboard,
   FolderKanban,
   Settings2,
   Users,
+  GitBranch,
+  Database,
+  Server,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 import type { MenuItem } from "@/web/types/menu";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -17,6 +22,9 @@ const iconMap: Record<string, LucideIcon> = {
   FolderKanban,
   Settings2,
   Users,
+  GitBranch,
+  Database,
+  Server,
 };
 
 interface SidebarProps {
@@ -27,6 +35,47 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
+function MenuButton({
+  item,
+  isActive,
+  collapsed,
+  onSelect,
+  indent,
+}: {
+  item: MenuItem;
+  isActive: boolean;
+  collapsed: boolean;
+  onSelect: (key: string) => void;
+  indent?: boolean;
+}) {
+  const Icon = item.icon ? iconMap[item.icon] : null;
+
+  return (
+    <Button
+      fullWidth
+      variant="ghost"
+      onPress={() => onSelect(item.key)}
+      className={`flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm h-auto font-normal ${
+        isActive
+          ? "bg-default-100 text-foreground font-medium"
+          : "text-default-500 hover:bg-default-50 hover:text-foreground"
+      } ${collapsed ? "!px-0" : ""} ${indent ? "pl-9" : ""}`}
+    >
+      {Icon && <Icon size={20} strokeWidth={1.8} className="shrink-0" />}
+      {!collapsed && (
+        <>
+          <span className="truncate">{item.label}</span>
+          {item.badge && (
+            <span className="ml-auto rounded-md bg-success-100 text-success-600 px-1.5 py-0.5 text-[10px] font-medium leading-none">
+              {item.badge}
+            </span>
+          )}
+        </>
+      )}
+    </Button>
+  );
+}
+
 export default function Sidebar({
   items,
   activeKey,
@@ -34,6 +83,19 @@ export default function Sidebar({
   collapsed,
   onToggleCollapse,
 }: SidebarProps) {
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(["system-settings"]),
+  );
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* User profile header */}
@@ -48,7 +110,9 @@ export default function Sidebar({
               A
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">Admin</p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                Admin
+              </p>
               <p className="text-xs text-default-400 truncate">管理员</p>
             </div>
           </div>
@@ -61,32 +125,71 @@ export default function Sidebar({
       <ScrollShadow className="flex-1 overflow-y-auto px-3 py-3">
         <nav className="flex flex-col gap-1">
           {items.map((item) => {
-            const Icon = item.icon ? iconMap[item.icon] : null;
-            const isActive = activeKey === item.key;
+            if (item.children && item.children.length > 0) {
+              const isExpanded = expandedGroups.has(item.key ?? "");
+              const hasActiveChild = item.children.some(
+                (c) => activeKey === c.key,
+              );
+
+              return (
+                <div key={item.key}>
+                  <Button
+                    fullWidth
+                    variant="ghost"
+                    onPress={() => toggleGroup(item.key ?? "")}
+                    className={`flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm h-auto font-normal ${
+                      hasActiveChild
+                        ? "text-foreground font-medium"
+                        : "text-default-500 hover:bg-default-50 hover:text-foreground"
+                    } ${collapsed ? "!px-0" : ""}`}
+                  >
+                    {item.icon &&
+                      (() => {
+                        const Icon = iconMap[item.icon];
+                        return Icon ? (
+                          <Icon
+                            size={20}
+                            strokeWidth={1.8}
+                            className="shrink-0"
+                          />
+                        ) : null;
+                      })()}
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        <ChevronDown
+                          size={16}
+                          className={`ml-auto shrink-0 transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </>
+                    )}
+                  </Button>
+                  {isExpanded &&
+                    !collapsed &&
+                    item.children.map((child) => (
+                      <MenuButton
+                        key={child.key}
+                        item={child}
+                        isActive={activeKey === child.key}
+                        collapsed={collapsed}
+                        onSelect={onSelect}
+                        indent
+                      />
+                    ))}
+                </div>
+              );
+            }
 
             return (
-              <button
+              <MenuButton
                 key={item.key}
-                onClick={() => onSelect(item.key)}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                  isActive
-                    ? "bg-default-100 text-foreground font-medium"
-                    : "text-default-500 hover:bg-default-50 hover:text-foreground"
-                } ${collapsed ? "justify-center" : ""}`}
-              >
-                {Icon && <Icon size={20} strokeWidth={1.8} className="shrink-0" />}
-                {!collapsed && (
-                  <>
-                    <span className="truncate">{item.label}</span>
-                    {item.badge && (
-                      <span className="ml-auto rounded-md bg-success-100 text-success-600 px-1.5 py-0.5 text-[10px] font-medium leading-none">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-              </button>
+                item={item}
+                isActive={activeKey === item.key}
+                collapsed={collapsed}
+                onSelect={onSelect}
+              />
             );
           })}
         </nav>
@@ -94,21 +197,27 @@ export default function Sidebar({
 
       {/* Collapse toggle */}
       <div className="px-3 pb-3">
-        <button
-          onClick={onToggleCollapse}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-default-400 hover:bg-default-50 hover:text-foreground transition-colors w-full ${
-            collapsed ? "justify-center" : ""
+        <Button
+          fullWidth
+          variant="ghost"
+          onPress={onToggleCollapse}
+          className={`flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm text-default-400 hover:bg-default-50 hover:text-foreground h-auto font-normal ${
+            collapsed ? "!px-0" : ""
           }`}
         >
           {collapsed ? (
             <PanelLeftOpen size={20} strokeWidth={1.8} className="shrink-0" />
           ) : (
             <>
-              <PanelLeftClose size={20} strokeWidth={1.8} className="shrink-0" />
+              <PanelLeftClose
+                size={20}
+                strokeWidth={1.8}
+                className="shrink-0"
+              />
               <span>收起菜单</span>
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );
