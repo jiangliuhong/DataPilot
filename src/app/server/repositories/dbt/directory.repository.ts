@@ -11,6 +11,26 @@ export async function create(data: NewDbtDirectory) {
   return findById(result.id);
 }
 
+/** 检查同父目录下是否存在同名目录 */
+export async function existsByName(projectId: number, name: string, parentId: number | null) {
+  const conditions = [
+    eq(dbtDirectories.projectId, projectId),
+    eq(dbtDirectories.name, name),
+    isNull(dbtDirectories.deletedAt),
+  ];
+  if (parentId === null) {
+    conditions.push(isNull(dbtDirectories.parentId));
+  } else {
+    conditions.push(eq(dbtDirectories.parentId, parentId));
+  }
+  const [row] = await db
+    .select({ id: dbtDirectories.id })
+    .from(dbtDirectories)
+    .where(and(...conditions))
+    .limit(1);
+  return !!row;
+}
+
 /** 根据 ID 查询目录（排除软删除） */
 export async function findById(id: number) {
   const [row] = await db

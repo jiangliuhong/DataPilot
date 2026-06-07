@@ -8,6 +8,26 @@ export async function create(data: NewDbtFile) {
   return findById(result.id);
 }
 
+/** 检查同目录下是否存在同名文件 */
+export async function existsByName(projectId: number, name: string, directoryId: number | null) {
+  const conditions = [
+    eq(dbtFiles.projectId, projectId),
+    eq(dbtFiles.name, name),
+    isNull(dbtFiles.deletedAt),
+  ];
+  if (directoryId === null) {
+    conditions.push(isNull(dbtFiles.directoryId));
+  } else {
+    conditions.push(eq(dbtFiles.directoryId, directoryId));
+  }
+  const [row] = await db
+    .select({ id: dbtFiles.id })
+    .from(dbtFiles)
+    .where(and(...conditions))
+    .limit(1);
+  return !!row;
+}
+
 /** 根据 ID 查询文件（排除软删除） */
 export async function findById(id: number) {
   const [row] = await db

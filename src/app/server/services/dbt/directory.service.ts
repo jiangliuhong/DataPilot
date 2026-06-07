@@ -16,6 +16,13 @@ export async function createDirectory(data: {
   name: string;
   parentId?: number | null;
 }) {
+  // 检查同父目录下是否存在同名目录
+  const parentId = data.parentId ?? null;
+  const exists = await directoryRepo.existsByName(data.projectId, data.name, parentId);
+  if (exists) {
+    throw new Error("Directory already exists in this location");
+  }
+
   let path: string;
   let depth: number;
 

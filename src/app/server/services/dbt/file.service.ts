@@ -9,6 +9,13 @@ export async function createFile(data: {
   content: string;
   fileType: string;
 }) {
+  // 检查同目录下是否存在同名文件
+  const directoryId = data.directoryId ?? null;
+  const exists = await fileRepo.existsByName(data.projectId, data.name, directoryId);
+  if (exists) {
+    throw new Error("File already exists in this directory");
+  }
+
   // 计算 path
   let path: string;
   if (data.directoryId) {

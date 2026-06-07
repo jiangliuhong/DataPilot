@@ -157,6 +157,15 @@ export default function ProjectList({ onViewDetail }: ProjectListProps) {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onPress={() =>
+                          window.open(`/editor/projects/${project.id}`, "_blank")
+                        }
+                      >
+                        文件编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onPress={() => {
                           setEditingProject(project);
                           setFormOpen(true);
