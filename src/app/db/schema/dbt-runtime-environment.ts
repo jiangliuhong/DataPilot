@@ -1,11 +1,11 @@
 import {
   mysqlTable,
-  serial,
-  varchar,
   bigint,
+  varchar,
   timestamp,
   mysqlEnum,
   unique,
+  foreignKey,
 } from "drizzle-orm/mysql-core";
 import { dbtVersions } from "./dbt-version";
 import { dbtDatabaseConnections } from "./dbt-database-connection";
@@ -14,14 +14,10 @@ import { dbtDatabaseConnections } from "./dbt-database-connection";
 export const dbtRuntimeEnvironments = mysqlTable(
   "dbt_runtime_environments",
   {
-    id: serial("id").primaryKey(),
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
     name: varchar("name", { length: 255 }).notNull(),
-    versionId: bigint("version_id", { mode: "number" })
-      .notNull()
-      .references(() => dbtVersions.id, { onDelete: "cascade" }),
-    connectionId: bigint("connection_id", { mode: "number" })
-      .notNull()
-      .references(() => dbtDatabaseConnections.id, { onDelete: "cascade" }),
+    versionId: bigint("version_id", { mode: "number" }).notNull(),
+    connectionId: bigint("connection_id", { mode: "number" }).notNull(),
     status: mysqlEnum("status", ["active", "inactive"])
       .notNull()
       .default("active"),
@@ -33,6 +29,20 @@ export const dbtRuntimeEnvironments = mysqlTable(
     deletedAt: timestamp("deleted_at"),
   },
   (table) => [
+    foreignKey({
+      columns: [table.versionId],
+      foreignColumns: [dbtVersions.id],
+      name: "runtime_env_version_fk",
+    })
+      .onDelete("cascade")
+      .onUpdate("no action"),
+    foreignKey({
+      columns: [table.connectionId],
+      foreignColumns: [dbtDatabaseConnections.id],
+      name: "runtime_env_connection_fk",
+    })
+      .onDelete("cascade")
+      .onUpdate("no action"),
     unique("dbt_runtime_environments_name_unique").on(table.name),
   ],
 );

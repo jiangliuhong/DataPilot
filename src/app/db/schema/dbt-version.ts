@@ -1,6 +1,6 @@
 import {
   mysqlTable,
-  serial,
+  bigint,
   varchar,
   json,
   timestamp,
@@ -12,7 +12,7 @@ import {
 export const dbtVersions = mysqlTable(
   "dbt_versions",
   {
-    id: serial("id").primaryKey(),
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
     name: varchar("name", { length: 255 }).notNull(),
     version: varchar("version", { length: 50 }).notNull(),
     adapterPackages: json("adapter_packages").$type<

@@ -1,9 +1,8 @@
 import {
   mysqlTable,
-  serial,
+  bigint,
   varchar,
   text,
-  int,
   json,
   timestamp,
   mysqlEnum,
@@ -14,7 +13,7 @@ import {
 export const dbtDatabaseConnections = mysqlTable(
   "dbt_database_connections",
   {
-    id: serial("id").primaryKey(),
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
     name: varchar("name", { length: 255 }).notNull(),
     databaseType: mysqlEnum("database_type", [
       "mysql5",
@@ -23,7 +22,7 @@ export const dbtDatabaseConnections = mysqlTable(
       "postgresql",
     ]).notNull(),
     host: varchar("host", { length: 255 }).notNull(),
-    port: int("port").notNull(),
+    port: bigint("port", { mode: "number" }).notNull(),
     databaseName: varchar("database_name", { length: 255 }).notNull(),
     schemaName: varchar("schema_name", { length: 255 }),
     username: varchar("username", { length: 255 }).notNull(),

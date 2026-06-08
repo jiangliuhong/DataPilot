@@ -1,7 +1,6 @@
 import {
   mysqlTable,
-  serial,
-  int,
+  bigint,
   varchar,
   timestamp,
   foreignKey,
@@ -13,13 +12,13 @@ import { dbtProjects } from "./dbt-project";
 export const dbtDirectories = mysqlTable(
   "dbt_directories",
   {
-    id: serial("id").primaryKey(),
-    projectId: int("project_id").notNull(),
-    parentId: int("parent_id"), // null = 根目录
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
+    projectId: bigint("project_id", { mode: "number" }).notNull(),
+    parentId: bigint("parent_id", { mode: "number" }), // null = 根目录
     name: varchar("name", { length: 255 }).notNull(),
-    path: varchar("path", { length: 1024 }).notNull(),
-    depth: int("depth").notNull().default(0),
-    sortOrder: int("sort_order").notNull().default(0),
+    path: varchar("path", { length: 500 }).notNull(),
+    depth: bigint("depth", { mode: "number" }).notNull().default(0),
+    sortOrder: bigint("sort_order", { mode: "number" }).notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

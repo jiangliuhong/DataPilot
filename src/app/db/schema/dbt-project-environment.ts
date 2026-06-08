@@ -1,10 +1,10 @@
 import {
   mysqlTable,
-  serial,
-  varchar,
   bigint,
+  varchar,
   timestamp,
   uniqueIndex,
+  foreignKey,
 } from "drizzle-orm/mysql-core";
 import { dbtProjects } from "./dbt-project";
 import { dbtRuntimeEnvironments } from "./dbt-runtime-environment";
@@ -13,13 +13,9 @@ import { dbtRuntimeEnvironments } from "./dbt-runtime-environment";
 export const dbtProjectEnvironments = mysqlTable(
   "dbt_project_environments",
   {
-    id: serial("id").primaryKey(),
-    projectId: bigint("project_id", { mode: "number" })
-      .notNull()
-      .references(() => dbtProjects.id, { onDelete: "cascade" }),
-    environmentId: bigint("environment_id", { mode: "number" })
-      .notNull()
-      .references(() => dbtRuntimeEnvironments.id, { onDelete: "cascade" }),
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
+    projectId: bigint("project_id", { mode: "number" }).notNull(),
+    environmentId: bigint("environment_id", { mode: "number" }).notNull(),
     environmentAlias: varchar("environment_alias", { length: 255 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
@@ -29,6 +25,20 @@ export const dbtProjectEnvironments = mysqlTable(
     deletedAt: timestamp("deleted_at"),
   },
   (table) => [
+    foreignKey({
+      columns: [table.projectId],
+      foreignColumns: [dbtProjects.id],
+      name: "project_env_project_fk",
+    })
+      .onDelete("cascade")
+      .onUpdate("no action"),
+    foreignKey({
+      columns: [table.environmentId],
+      foreignColumns: [dbtRuntimeEnvironments.id],
+      name: "project_env_environment_fk",
+    })
+      .onDelete("cascade")
+      .onUpdate("no action"),
     uniqueIndex("dbt_project_environments_unique").on(
       table.projectId,
       table.environmentId,

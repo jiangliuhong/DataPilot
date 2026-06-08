@@ -1,7 +1,6 @@
 import {
   mysqlTable,
-  serial,
-  int,
+  bigint,
   varchar,
   text,
   timestamp,
@@ -15,14 +14,14 @@ import { dbtDirectories } from "./dbt-directory";
 export const dbtFiles = mysqlTable(
   "dbt_files",
   {
-    id: serial("id").primaryKey(),
-    projectId: int("project_id").notNull(),
-    directoryId: int("directory_id"), // null = 项目根目录下的文件
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
+    projectId: bigint("project_id", { mode: "number" }).notNull(),
+    directoryId: bigint("directory_id", { mode: "number" }), // null = 项目根目录下的文件
     name: varchar("name", { length: 255 }).notNull(),
-    path: varchar("path", { length: 1024 }).notNull(),
+    path: varchar("path", { length: 500 }).notNull(),
     content: text("content").notNull().default(""),
     fileType: varchar("file_type", { length: 20 }).notNull(),
-    size: int("size").notNull().default(0),
+    size: bigint("size", { mode: "number" }).notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

@@ -1,6 +1,6 @@
 import {
   mysqlTable,
-  serial,
+  bigint,
   varchar,
   text,
   timestamp,
@@ -12,7 +12,7 @@ import {
 export const dbtProjects = mysqlTable(
   "dbt_projects",
   {
-    id: serial("id").primaryKey(),
+    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     status: mysqlEnum("status", ["active", "archived"])
