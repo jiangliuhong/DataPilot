@@ -1,14 +1,14 @@
 import { eq, and, isNull, like, sql } from "drizzle-orm";
-import { db } from "@/app/db";
+import { db, insertReturningId } from "@/app/db";
 import {
   dbtDirectories,
   type NewDbtDirectory,
-} from "@/app/db/schema/dbt-directory";
+} from "@/app/db/schema";
 
 /** 创建目录 */
 export async function create(data: NewDbtDirectory) {
-  const [result] = await db.insert(dbtDirectories).values(data).$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtDirectories, data);
+  return findById(id);
 }
 
 /** 检查同父目录下是否存在同名目录 */

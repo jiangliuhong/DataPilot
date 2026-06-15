@@ -1,11 +1,11 @@
 import { eq, and, isNull, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
-import { dbtVersions, type NewDbtVersion } from "@/app/db/schema/dbt-version";
+import { db, insertReturningId } from "@/app/db";
+import { dbtVersions, type NewDbtVersion } from "@/app/db/schema";
 
 /** 创建版本 */
 export async function createVersion(data: NewDbtVersion) {
-  const [result] = await db.insert(dbtVersions).values(data).$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtVersions, data);
+  return findById(id);
 }
 
 /** 根据 ID 查询版本（排除软删除） */

@@ -1,11 +1,11 @@
 import { eq, and, isNull, like, sql, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
-import { dbtProjects, type NewDbtProject } from "@/app/db/schema/dbt-project";
+import { db, insertReturningId } from "@/app/db";
+import { dbtProjects, type NewDbtProject } from "@/app/db/schema";
 
 /** 创建项目 */
 export async function createProject(data: NewDbtProject) {
-  const [result] = await db.insert(dbtProjects).values(data).$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtProjects, data);
+  return findById(id);
 }
 
 /** 根据 ID 查询项目（排除软删除） */

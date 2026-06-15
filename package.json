@@ -10,7 +10,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:sqlite:migrate": "node scripts/sqlite/migrate.js",
+    "db:sqlite:demo": "node scripts/sqlite/run-demo-init.js"
   },
   "dependencies": {
     "@heroui/react": "^3.1.0",

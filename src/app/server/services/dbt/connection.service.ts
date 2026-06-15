@@ -1,7 +1,7 @@
 import * as connectionRepo from "@/app/server/repositories/dbt/connection.repository";
 import * as environmentRepo from "@/app/server/repositories/dbt/environment.repository";
 import { encrypt } from "@/app/server/lib/crypto";
-import type { DbtDatabaseConnection, NewDbtDatabaseConnection } from "@/app/db/schema/dbt-database-connection";
+import type { DbtDatabaseConnection, NewDbtDatabaseConnection } from "@/app/db/schema";
 
 /** 脱敏：移除 encryptedPassword，附加 hasPassword */
 function sanitize(

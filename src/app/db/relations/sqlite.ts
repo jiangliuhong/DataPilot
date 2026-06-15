@@ -1,11 +1,11 @@
 import { relations } from "drizzle-orm";
-import { dbtProjects } from "../schema/dbt-project";
-import { dbtDirectories } from "../schema/dbt-directory";
-import { dbtFiles } from "../schema/dbt-file";
-import { dbtVersions } from "../schema/dbt-version";
-import { dbtDatabaseConnections } from "../schema/dbt-database-connection";
-import { dbtRuntimeEnvironments } from "../schema/dbt-runtime-environment";
-import { dbtProjectEnvironments } from "../schema/dbt-project-environment";
+import { dbtProjects } from "../schema/sqlite/dbt-project";
+import { dbtDirectories } from "../schema/sqlite/dbt-directory";
+import { dbtFiles } from "../schema/sqlite/dbt-file";
+import { dbtVersions } from "../schema/sqlite/dbt-version";
+import { dbtDatabaseConnections } from "../schema/sqlite/dbt-database-connection";
+import { dbtRuntimeEnvironments } from "../schema/sqlite/dbt-runtime-environment";
+import { dbtProjectEnvironments } from "../schema/sqlite/dbt-project-environment";
 
 /** dbt_projects → dbt_directories 一对多 + 项目环境绑定 */
 export const dbtProjectsRelations = relations(dbtProjects, ({ many }) => ({

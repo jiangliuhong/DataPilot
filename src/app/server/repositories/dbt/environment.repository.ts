@@ -1,19 +1,16 @@
 import { eq, and, isNull, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
+import { db, insertReturningId } from "@/app/db";
 import {
   dbtRuntimeEnvironments,
+  dbtVersions,
+  dbtDatabaseConnections,
   type NewDbtRuntimeEnvironment,
-} from "@/app/db/schema/dbt-runtime-environment";
-import { dbtVersions } from "@/app/db/schema/dbt-version";
-import { dbtDatabaseConnections } from "@/app/db/schema/dbt-database-connection";
+} from "@/app/db/schema";
 
 /** 创建运行环境 */
 export async function createEnvironment(data: NewDbtRuntimeEnvironment) {
-  const [result] = await db
-    .insert(dbtRuntimeEnvironments)
-    .values(data)
-    .$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtRuntimeEnvironments, data);
+  return findById(id);
 }
 
 /** 根据 ID 查询环境（含关联的版本和连接摘要） */

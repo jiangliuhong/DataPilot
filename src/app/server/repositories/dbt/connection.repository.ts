@@ -1,17 +1,14 @@
 import { eq, and, isNull, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
+import { db, insertReturningId } from "@/app/db";
 import {
   dbtDatabaseConnections,
   type NewDbtDatabaseConnection,
-} from "@/app/db/schema/dbt-database-connection";
+} from "@/app/db/schema";
 
 /** 创建数据库连接 */
 export async function createConnection(data: NewDbtDatabaseConnection) {
-  const [result] = await db
-    .insert(dbtDatabaseConnections)
-    .values(data)
-    .$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtDatabaseConnections, data);
+  return findById(id);
 }
 
 /** 根据 ID 查询连接（排除软删除） */

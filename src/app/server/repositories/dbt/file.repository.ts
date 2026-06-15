@@ -1,11 +1,11 @@
 import { eq, and, isNull, like, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
-import { dbtFiles, type NewDbtFile } from "@/app/db/schema/dbt-file";
+import { db, insertReturningId } from "@/app/db";
+import { dbtFiles, type NewDbtFile } from "@/app/db/schema";
 
 /** 创建文件 */
 export async function create(data: NewDbtFile) {
-  const [result] = await db.insert(dbtFiles).values(data).$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtFiles, data);
+  return findById(id);
 }
 
 /** 检查同目录下是否存在同名文件 */

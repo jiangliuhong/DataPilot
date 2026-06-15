@@ -1,20 +1,17 @@
 import { eq, and, isNull, count, desc } from "drizzle-orm";
-import { db } from "@/app/db";
+import { db, insertReturningId } from "@/app/db";
 import {
   dbtProjectEnvironments,
+  dbtRuntimeEnvironments,
+  dbtVersions,
+  dbtDatabaseConnections,
   type NewDbtProjectEnvironment,
-} from "@/app/db/schema/dbt-project-environment";
-import { dbtRuntimeEnvironments } from "@/app/db/schema/dbt-runtime-environment";
-import { dbtVersions } from "@/app/db/schema/dbt-version";
-import { dbtDatabaseConnections } from "@/app/db/schema/dbt-database-connection";
+} from "@/app/db/schema";
 
 /** 创建绑定 */
 export async function createBinding(data: NewDbtProjectEnvironment) {
-  const [result] = await db
-    .insert(dbtProjectEnvironments)
-    .values(data)
-    .$returningId();
-  return findById(result.id);
+  const { id } = await insertReturningId(dbtProjectEnvironments, data);
+  return findById(id);
 }
 
 /** 根据 ID 查询绑定 */

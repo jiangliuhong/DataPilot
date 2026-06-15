@@ -47,6 +47,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# SQLite database files (runtime artifacts, generated via db:sqlite:migrate)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 # IDE
 .idea/
 .vscode/
