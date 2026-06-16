@@ -28,3 +28,5 @@ export const dbtRuntimeEnvironmentsRelations =
   active.dbtRuntimeEnvironmentsRelations;
 export const dbtProjectEnvironmentsRelations =
   active.dbtProjectEnvironmentsRelations;
+export const agentConversationsRelations = active.agentConversationsRelations;
+export const agentMessagesRelations = active.agentMessagesRelations;

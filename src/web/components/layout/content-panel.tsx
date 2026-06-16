@@ -5,6 +5,7 @@ import ProjectDetail from "@/web/features/project/components/project-detail";
 import VersionList from "@/web/features/dbt-version/components/version-list";
 import ConnectionList from "@/web/features/dbt-connection/components/connection-list";
 import EnvironmentList from "@/web/features/dbt-environment/components/environment-list";
+import AgentChatLayout from "@/web/features/agent/components/agent-chat-layout";
 import { Card } from "@heroui/react";
 
 interface ContentPanelProps {
@@ -74,6 +75,15 @@ export default function ContentPanel({
     return (
       <div className="p-6">
         <ProjectDetail projectId={projectId} onBack={handleBackToList} />
+      </div>
+    );
+  }
+
+  // AI 助手对话页：占满全高，自带内边距
+  if (activeKey === "agent-chat") {
+    return (
+      <div className="h-full">
+        <AgentChatLayout />
       </div>
     );
   }

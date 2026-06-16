@@ -3,6 +3,7 @@ import type { MenuItem } from "@/web/types/menu";
 export const menuItems: MenuItem[] = [
   { key: "dashboard", label: "仪表盘", icon: "LayoutDashboard" },
   { key: "project-list", label: "项目管理", icon: "FolderKanban" },
+  { key: "agent-chat", label: "AI 助手", icon: "Bot" },
   {
     key: "system-settings",
     label: "系统设置",

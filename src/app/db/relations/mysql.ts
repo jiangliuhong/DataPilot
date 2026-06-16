@@ -6,6 +6,9 @@ import { dbtVersions } from "../schema/mysql/dbt-version";
 import { dbtDatabaseConnections } from "../schema/mysql/dbt-database-connection";
 import { dbtRuntimeEnvironments } from "../schema/mysql/dbt-runtime-environment";
 import { dbtProjectEnvironments } from "../schema/mysql/dbt-project-environment";
+import { users } from "../schema/mysql/user";
+import { agentConversations } from "../schema/mysql/agent-conversation";
+import { agentMessages } from "../schema/mysql/agent-message";
 
 /** dbt_projects → dbt_directories 一对多 + 项目环境绑定 */
 export const dbtProjectsRelations = relations(dbtProjects, ({ many }) => ({
@@ -86,3 +89,23 @@ export const dbtProjectEnvironmentsRelations = relations(
     }),
   }),
 );
+
+/** agent_conversations → users + agent_messages 一对多 */
+export const agentConversationsRelations = relations(
+  agentConversations,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [agentConversations.userId],
+      references: [users.id],
+    }),
+    messages: many(agentMessages),
+  }),
+);
+
+/** agent_messages → agent_conversations */
+export const agentMessagesRelations = relations(agentMessages, ({ one }) => ({
+  conversation: one(agentConversations, {
+    fields: [agentMessages.conversationId],
+    references: [agentConversations.id],
+  }),
+}));

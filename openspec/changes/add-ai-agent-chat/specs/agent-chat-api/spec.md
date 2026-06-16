@@ -1,5 +1,20 @@
 ## ADDED Requirements
 
+### Requirement: Agent 接口强制鉴权
+所有 `/api/agent/*` 接口 SHALL 强制登录，复用现有 JWT + `dp_auth` Cookie 认证体系。接口 SHALL 通过 `requireAuth()` 辅助函数（读取 Cookie → 调用 `auth.service.getCurrentUser`）获取当前用户；未登录或会话过期 SHALL 返回 401。获取到的 `userId` SHALL 贯穿 service 与 repository 层用于数据隔离。
+
+#### Scenario: 已登录用户访问
+- **WHEN** 已登录用户（携带有效 `dp_auth` Cookie）请求任意 `/api/agent/*` 接口
+- **THEN** 系统 `requireAuth()` 解析出当前用户，请求继续处理，`userId` 传入后续 service/repository
+
+#### Scenario: 未登录访问
+- **WHEN** 未携带或携带无效/过期 Cookie 的请求访问任意 `/api/agent/*` 接口
+- **THEN** 系统 SHALL 返回 401（错误信息"未登录"），不执行任何业务逻辑
+
+#### Scenario: 访问他人会话
+- **WHEN** 已登录用户 A 请求访问属于用户 B 的会话（如 GET `/api/agent/conversations/:id`，该会话 `userId` 为 B）
+- **THEN** 系统 SHALL 返回 404（会话不存在），不泄露该会话存在与否
+
 ### Requirement: 流式对话接口
 系统 SHALL 提供 `POST /api/agent/chat` 接口，接收 `{ conversationId: number, message: string }`，返回 `text/event-stream` 流式响应。接口 SHALL 调用 LangChain Agent 进行编排，并通过 SSE 事件逐阶段下发进度。
 

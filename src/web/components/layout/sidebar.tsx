@@ -9,6 +9,7 @@ import {
   GitBranch,
   Database,
   Server,
+  Bot,
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
@@ -25,6 +26,7 @@ const iconMap: Record<string, LucideIcon> = {
   GitBranch,
   Database,
   Server,
+  Bot,
 };
 
 interface SidebarProps {
