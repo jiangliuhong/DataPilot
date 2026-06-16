@@ -8,6 +8,13 @@
       "when": 1781541915382,
       "tag": "0000_real_randall",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781605165389,
+      "tag": "0001_white_red_hulk",
+      "breakpoints": true
     }
   ]
 }

@@ -5,4 +5,6 @@ export { versionApi } from "./version";
 export { connectionApi } from "./connection";
 export { environmentApi } from "./environment";
 export { projectEnvironmentApi } from "./project-environment";
+export { authApi } from "./auth";
+export type { AuthUser } from "./auth";
 export { ApiError } from "./request";

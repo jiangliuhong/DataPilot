@@ -34,6 +34,7 @@ export const dbtVersions = activeSchema.dbtVersions;
 export const dbtDatabaseConnections = activeSchema.dbtDatabaseConnections;
 export const dbtRuntimeEnvironments = activeSchema.dbtRuntimeEnvironments;
 export const dbtProjectEnvironments = activeSchema.dbtProjectEnvironments;
+export const users = activeSchema.users;
 
 // Canonical types (always MySQL-shaped, regardless of active dialect).
 export type {
@@ -51,4 +52,6 @@ export type {
   DbtRuntimeEnvironment,
   NewDbtProjectEnvironment,
   DbtProjectEnvironment,
+  NewUser,
+  User,
 } from "./mysql";

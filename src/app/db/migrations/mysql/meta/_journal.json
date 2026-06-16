@@ -15,6 +15,13 @@
       "when": 1780678000000,
       "tag": "0001_add_dbt_environment_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1781605180830,
+      "tag": "0002_conscious_kylun",
+      "breakpoints": true
     }
   ]
 }

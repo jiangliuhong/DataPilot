@@ -12,11 +12,16 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(
+/**
+ * 底层 JSON 请求封装，接收完整 baseUrl（如 "/api/dbt" 或 "/api/auth"）。
+ * 抽出后各 api-client 模块可按需指向不同前缀，错误模型统一为 `ApiError`。
+ */
+async function fetchJson<T>(
+  baseUrl: string,
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${BASE_URL}${path}`;
+  const url = `${baseUrl}${path}`;
   const hasBody = options.body !== undefined;
   const res = await fetch(url, {
     ...options,
@@ -42,6 +47,21 @@ export async function request<T>(
 
   return res.json();
 }
+
+/**
+ * 指向 `/api/dbt` 前缀的请求封装（dbt 模块专用）。
+ * 保留原签名以兼容现有 dbt 客户端调用。
+ */
+export async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return fetchJson<T>(BASE_URL, path, options);
+}
+
+/** 导出底层封装，供指向其他前缀的 api-client 复用（如 auth）。 */
+export { fetchJson as fetchJsonRequest };
+
 
 export async function requestBlob(
   path: string,
