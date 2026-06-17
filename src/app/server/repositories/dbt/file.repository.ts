@@ -44,7 +44,8 @@ export async function findByProjectId(options: {
   limit: number;
   offset: number;
   fileType?: string;
-  directoryId?: number;
+  // undefined = 不过滤目录；null = 仅根目录；number = 指定目录
+  directoryId?: number | null;
 }) {
   const conditions = [
     eq(dbtFiles.projectId, options.projectId),
@@ -54,7 +55,13 @@ export async function findByProjectId(options: {
     conditions.push(eq(dbtFiles.fileType, options.fileType));
   }
   if (options.directoryId !== undefined) {
-    conditions.push(eq(dbtFiles.directoryId, options.directoryId));
+    // null 表示「项目根目录」(directory_id IS NULL)；
+    // 正整数表示具体某个目录下的文件。
+    conditions.push(
+      options.directoryId === null
+        ? isNull(dbtFiles.directoryId)
+        : eq(dbtFiles.directoryId, options.directoryId),
+    );
   }
 
   const where = and(...conditions);

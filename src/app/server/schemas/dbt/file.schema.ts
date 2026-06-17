@@ -60,10 +60,24 @@ export const fileIdSchema = z.object({
   fileId: z.coerce.number().int().positive("无效的文件 ID"),
 });
 
-/** 文件列表查询参数 */
+/**
+ * 文件列表查询参数。
+ *
+ * directoryId 三态语义：
+ *   - 缺省（undefined）：不过滤目录，返回项目下所有文件
+ *   - "null" / "root"：仅返回项目根目录下的文件（directory_id IS NULL）
+ *   - 正整数：仅返回该目录下的文件
+ *
+ * 由于 query string 里拿到的都是字符串，用 preprocess 显式把表示
+ * 「根目录」的字面量归一为 null，避免与正整数分支混淆。
+ */
 export const listFilesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
   fileType: z.string().optional(),
-  directoryId: z.coerce.number().int().positive().optional(),
+  directoryId: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    if (val === "null" || val === "root") return null;
+    return val;
+  }, z.union([z.coerce.number().int().positive(), z.null()]).optional()),
 });

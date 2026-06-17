@@ -74,7 +74,9 @@ export default function EditorDirectoryTree({
     try {
       const [treeResult, filesResult] = await Promise.all([
         directoryApi.getTree(projectId),
-        fileApi.list(projectId, { directoryId: undefined, limit: 100 }),
+        // directoryId: null 只取项目根目录下的文件（directory_id IS NULL），
+        // 子目录内的文件由对应目录展开时按需加载，避免根目录把整棵树铺平展示。
+        fileApi.list(projectId, { directoryId: null, limit: 100 }),
       ]);
       setTree(treeResult);
       setNodeStates(buildInitialMap(treeResult));

@@ -24,6 +24,43 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
+-- 0. users：演示登录账户
+-- -----------------------------------------------------------------------------
+-- 密码哈希格式为 scrypt 的 saltHex:hashHex（见 src/app/server/lib/password.ts，
+-- 参数 N=16384, r=8, p=1, salt 16 字节, key 64 字节）。
+--
+-- 下面的哈希对应明文密码：
+--   admin  / admin123
+--   viewer / viewer123
+-- 如需更换密码，请通过应用 UI 的「注册/修改密码」入口，或直接用项目里的
+-- hashPassword() 重新生成后替换这里。
+INSERT OR IGNORE INTO `users` (
+  `id`, `username`, `password_hash`, `display_name`, `email`, `status`, `created_at`, `updated_at`
+) VALUES (
+  1,
+  'admin',
+  'd9cbcaecda453b21dd239b6cf7a03e3a:72e457adc439bb4356eaa103791c3f75465222c0ed11ff672912e13f345c25696e76cba4d67b6f0ef355a32cc773f9644744a749648299aee7bf173d7a4af354',
+  'Admin',
+  'admin@datapilot.local',
+  'active',
+  unixepoch(),
+  unixepoch()
+);
+
+INSERT OR IGNORE INTO `users` (
+  `id`, `username`, `password_hash`, `display_name`, `email`, `status`, `created_at`, `updated_at`
+) VALUES (
+  2,
+  'viewer',
+  'bc4667fa0ce6464f1e6b00289f51d024:a93e80b4209f2fc90d94bf5f5f7e70a693cbe0a7dcef0b33348ba7e604467d12981945b90fd4464c4b8964966c4b3a7f2a21ac2fe890836262e17f85b10ff1bd',
+  'Viewer',
+  'viewer@datapilot.local',
+  'active',
+  unixepoch(),
+  unixepoch()
+);
+
+-- -----------------------------------------------------------------------------
 -- 1. dbt_versions：dbt Core 版本定义（适配器包 + 依赖）
 -- -----------------------------------------------------------------------------
 INSERT OR IGNORE INTO `dbt_versions` (

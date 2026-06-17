@@ -40,7 +40,8 @@ const sql = fs.readFileSync(sqlPath, "utf8");
 sqlite.exec(sql);
 
 const counts = sqlite.prepare(
-  `SELECT 'dbt_projects' AS t, COUNT(*) AS n FROM dbt_projects
+  `SELECT 'users' AS t, COUNT(*) AS n FROM users
+   UNION ALL SELECT 'dbt_projects', COUNT(*) FROM dbt_projects
    UNION ALL SELECT 'dbt_versions', COUNT(*) FROM dbt_versions
    UNION ALL SELECT 'dbt_database_connections', COUNT(*) FROM dbt_database_connections
    UNION ALL SELECT 'dbt_runtime_environments', COUNT(*) FROM dbt_runtime_environments

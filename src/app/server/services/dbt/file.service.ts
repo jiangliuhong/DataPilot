@@ -46,7 +46,8 @@ export async function listFiles(options: {
   limit: number;
   offset: number;
   fileType?: string;
-  directoryId?: number;
+  // undefined = 不过滤目录；null = 仅根目录；number = 指定目录
+  directoryId?: number | null;
 }) {
   return fileRepo.findByProjectId(options);
 }
