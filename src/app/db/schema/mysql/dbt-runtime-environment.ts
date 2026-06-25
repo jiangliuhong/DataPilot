@@ -2,6 +2,7 @@ import {
   mysqlTable,
   bigint,
   varchar,
+  text,
   timestamp,
   mysqlEnum,
   unique,
@@ -21,6 +22,17 @@ export const dbtRuntimeEnvironments = mysqlTable(
     status: mysqlEnum("status", ["active", "inactive"])
       .notNull()
       .default("active"),
+    initializationStatus: mysqlEnum("initialization_status", [
+      "pending",
+      "running",
+      "initialized",
+      "failed",
+    ])
+      .notNull()
+      .default("pending"),
+    venvPath: varchar("venv_path", { length: 512 }),
+    initializedAt: timestamp("initialized_at"),
+    lastErrorMessage: text("last_error_message"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at")
       .notNull()

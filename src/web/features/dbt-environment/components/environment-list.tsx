@@ -7,8 +7,27 @@ import { showError, showSuccess } from "@/web/components/shared/error-toast";
 import Pagination from "@/web/components/shared/pagination";
 import ConfirmModal from "@/web/components/shared/confirm-modal";
 import EnvironmentFormModal from "./environment-form-modal";
+import InitLogPanel from "./init-log-panel";
 import { useEnvironments } from "../hooks/use-environments";
 import type { Environment } from "@/web/types/dbt";
+
+/** 初始化状态展示文案 */
+const INIT_STATUS_LABEL: Record<Environment["initializationStatus"], string> = {
+  pending: "待初始化",
+  running: "初始化中",
+  initialized: "初始化完成",
+  failed: "初始化失败",
+};
+
+const INIT_STATUS_COLOR: Record<
+  Environment["initializationStatus"],
+  "default" | "accent" | "success" | "danger"
+> = {
+  pending: "default",
+  running: "accent",
+  initialized: "success",
+  failed: "danger",
+};
 
 export default function EnvironmentList() {
   const { data, versions, connections, loading, params, setFilters, setPage, refresh } = useEnvironments();
@@ -16,6 +35,7 @@ export default function EnvironmentList() {
   const [editingEnv, setEditingEnv] = useState<Environment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Environment | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [initTarget, setInitTarget] = useState<Environment | null>(null);
 
   const getVersionName = (versionId: number) => {
     const v = versions.find((v) => v.id === versionId);
@@ -106,6 +126,7 @@ export default function EnvironmentList() {
               <Table.Column>dbt 版本</Table.Column>
               <Table.Column>数据库连接</Table.Column>
               <Table.Column>状态</Table.Column>
+              <Table.Column>初始化</Table.Column>
               <Table.Column>操作</Table.Column>
             </Table.Header>
             <Table.Body>
@@ -126,7 +147,24 @@ export default function EnvironmentList() {
                     </Chip>
                   </Table.Cell>
                   <Table.Cell>
+                    <Chip
+                      color={INIT_STATUS_COLOR[env.initializationStatus]}
+                      variant="soft"
+                      size="sm"
+                      title={env.lastErrorMessage ?? undefined}
+                    >
+                      {INIT_STATUS_LABEL[env.initializationStatus]}
+                    </Chip>
+                  </Table.Cell>
+                  <Table.Cell>
                     <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => setInitTarget(env)}
+                      >
+                        {env.initializationStatus === "pending" ? "初始化" : "查看/初始化"}
+                      </Button>
                       <Button variant="ghost" size="sm" onPress={() => { setEditingEnv(env); setFormOpen(true); }}>编辑</Button>
                       <Button variant="danger" size="sm" onPress={() => setDeleteTarget(env)}>删除</Button>
                     </div>
@@ -157,6 +195,13 @@ export default function EnvironmentList() {
         onConfirm={handleDelete}
         title="删除环境"
         message={`确认删除环境 "${deleteTarget?.name}"？如果已被项目绑定则无法删除。`}
+      />
+
+      <InitLogPanel
+        isOpen={!!initTarget}
+        onClose={() => setInitTarget(null)}
+        environment={initTarget}
+        onChanged={refresh}
       />
     </div>
   );

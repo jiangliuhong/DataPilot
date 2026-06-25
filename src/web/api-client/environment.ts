@@ -37,4 +37,11 @@ export const environmentApi = {
       method: "DELETE",
     });
   },
+
+  initialize(id: number) {
+    return request<{ initializationStatus: "running" }>(
+      `/environments/${id}/initialize`,
+      { method: "POST" },
+    );
+  },
 };

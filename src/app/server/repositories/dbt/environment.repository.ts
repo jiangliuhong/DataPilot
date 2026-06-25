@@ -22,6 +22,10 @@ export async function findById(id: number) {
       versionId: dbtRuntimeEnvironments.versionId,
       connectionId: dbtRuntimeEnvironments.connectionId,
       status: dbtRuntimeEnvironments.status,
+      initializationStatus: dbtRuntimeEnvironments.initializationStatus,
+      venvPath: dbtRuntimeEnvironments.venvPath,
+      initializedAt: dbtRuntimeEnvironments.initializedAt,
+      lastErrorMessage: dbtRuntimeEnvironments.lastErrorMessage,
       createdAt: dbtRuntimeEnvironments.createdAt,
       updatedAt: dbtRuntimeEnvironments.updatedAt,
       deletedAt: dbtRuntimeEnvironments.deletedAt,
@@ -89,6 +93,10 @@ export async function findList(options: {
       versionId: dbtRuntimeEnvironments.versionId,
       connectionId: dbtRuntimeEnvironments.connectionId,
       status: dbtRuntimeEnvironments.status,
+      initializationStatus: dbtRuntimeEnvironments.initializationStatus,
+      venvPath: dbtRuntimeEnvironments.venvPath,
+      initializedAt: dbtRuntimeEnvironments.initializedAt,
+      lastErrorMessage: dbtRuntimeEnvironments.lastErrorMessage,
       createdAt: dbtRuntimeEnvironments.createdAt,
       updatedAt: dbtRuntimeEnvironments.updatedAt,
       versionName: dbtVersions.name,
@@ -135,6 +143,57 @@ export async function updateById(
       ),
     );
   return findById(id);
+}
+
+/** 更新初始化状态相关字段 */
+export async function updateInitializationState(
+  id: number,
+  data: {
+    status: "pending" | "running" | "initialized" | "failed";
+    venvPath?: string | null;
+    initializedAt?: Date | null;
+    lastErrorMessage?: string | null;
+  },
+) {
+  // 注意：data.status 对应表里的 initialization_status 列（schema 字段名 initializationStatus），
+  // 不能与 active/inactive 的 status 列混淆，因此显式映射。
+  await db
+    .update(dbtRuntimeEnvironments)
+    .set(
+      {
+        initializationStatus: data.status,
+        venvPath: data.venvPath,
+        initializedAt: data.initializedAt,
+        lastErrorMessage: data.lastErrorMessage,
+        updatedAt: new Date(),
+      },
+    )
+    .where(
+      and(
+        eq(dbtRuntimeEnvironments.id, id),
+        isNull(dbtRuntimeEnvironments.deletedAt),
+      ),
+    );
+  return findById(id);
+}
+
+/** 轻量查询：仅取初始化状态（供并发检查使用） */
+export async function findInitializationStatus(id: number) {
+  const [row] = await db
+    .select({
+      id: dbtRuntimeEnvironments.id,
+      initializationStatus: dbtRuntimeEnvironments.initializationStatus,
+      venvPath: dbtRuntimeEnvironments.venvPath,
+    })
+    .from(dbtRuntimeEnvironments)
+    .where(
+      and(
+        eq(dbtRuntimeEnvironments.id, id),
+        isNull(dbtRuntimeEnvironments.deletedAt),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
 }
 
 /** 软删除环境 */
