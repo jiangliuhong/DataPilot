@@ -3,12 +3,14 @@ import { createFileSchema, listFilesQuerySchema } from "@/app/server/schemas/dbt
 import * as fileService from "@/app/server/services/dbt/file.service";
 import * as projectService from "@/app/server/services/dbt/project.service";
 import { handleValidationError, notFound, apiError, conflict, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects/:id/files — 文件列表 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -37,6 +39,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

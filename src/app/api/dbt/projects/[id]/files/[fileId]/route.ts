@@ -1,12 +1,14 @@
 import { fileIdSchema, updateFileSchema } from "@/app/server/schemas/dbt/file.schema";
 import * as fileService from "@/app/server/services/dbt/file.service";
 import { handleValidationError, notFound, apiError, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects/:id/files/:fileId — 文件详情 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> },
 ) {
+  await requireAuth();
   const rawParams = await params;
   const parsed = fileIdSchema.safeParse(rawParams);
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -21,6 +23,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> },
 ) {
+  await requireAuth();
   const rawParams = await params;
   const parsed = fileIdSchema.safeParse(rawParams);
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -46,6 +49,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> },
 ) {
+  await requireAuth();
   const rawParams = await params;
   const parsed = fileIdSchema.safeParse(rawParams);
   if (!parsed.success) return handleValidationError(parsed.error);

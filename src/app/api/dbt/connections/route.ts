@@ -3,10 +3,12 @@ import * as connectionService from "@/app/server/services/dbt/connection.service
 import * as connectionRepo from "@/app/server/repositories/dbt/connection.repository";
 import { createConnectionSchema, listConnectionsQuerySchema } from "@/app/server/schemas/dbt/connection.schema";
 import { handleValidationError, apiError, conflict } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/connections — 连接列表 */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth();
     const query = listConnectionsQuerySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
 /** POST /api/dbt/connections — 创建连接 */
 export async function POST(request: Request) {
   try {
+    await requireAuth();
     const body = await request.json();
     const data = createConnectionSchema.parse(body);
 

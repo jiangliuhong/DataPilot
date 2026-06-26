@@ -1,4 +1,4 @@
-import { fetchJsonRequest, ApiError } from "./request";
+import { fetchJsonRequest, ApiError, handleUnauthorized } from "./request";
 import { buildQuery } from "./request";
 import type {
   AgentConversation,
@@ -53,16 +53,24 @@ export const chatApi = {
    *
    * 返回原始 Response，调用方读取 body 解析 `data: <JSON>\n\n` 事件。
    * 非流式错误（401/404/400）会抛 ApiError。
+   *
+   * @param signal 可选 AbortSignal，用于中止请求（"停止生成"）。
    */
   async streamChat(
     conversationId: number,
     message: string,
+    signal?: AbortSignal,
   ): Promise<Response> {
     const res = await fetch(`${BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conversationId, message }),
+      signal,
     });
+
+    if (res.status === 401) {
+      handleUnauthorized(`${BASE_URL}/chat`);
+    }
 
     if (!res.ok) {
       let body: Record<string, unknown> = {};

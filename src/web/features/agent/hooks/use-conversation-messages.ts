@@ -10,6 +10,7 @@ interface UseConversationMessagesResult {
   error: string | null;
   load: (conversationId: number) => Promise<void>;
   clear: () => void;
+  clearError: () => void;
 }
 
 /**
@@ -41,5 +42,9 @@ export function useConversationMessages(): UseConversationMessagesResult {
     setError(null);
   }, []);
 
-  return { messages, loading, error, load, clear };
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { messages, loading, error, load, clear, clearError };
 }

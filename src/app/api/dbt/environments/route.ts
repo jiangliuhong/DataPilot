@@ -3,10 +3,12 @@ import * as environmentService from "@/app/server/services/dbt/environment.servi
 import * as environmentRepo from "@/app/server/repositories/dbt/environment.repository";
 import { createEnvironmentSchema, listEnvironmentsQuerySchema } from "@/app/server/schemas/dbt/environment.schema";
 import { handleValidationError, apiError, conflict, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/environments — 环境列表 */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth();
     const query = listEnvironmentsQuerySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
 /** POST /api/dbt/environments — 创建运行环境 */
 export async function POST(request: Request) {
   try {
+    await requireAuth();
     const body = await request.json();
     const data = createEnvironmentSchema.parse(body);
 

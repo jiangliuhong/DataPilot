@@ -1,5 +1,8 @@
 const BASE_URL = "/api/dbt";
 
+/** auth 接口前缀：其 401（如登录凭据错误）为正常业务错误，不触发全局登录跳转。 */
+const AUTH_PREFIX = "/api/auth";
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -10,6 +13,22 @@ export class ApiError extends Error {
     );
     this.name = "ApiError";
   }
+}
+
+/**
+ * 会话过期/未登录统一处理：业务接口（非 `/api/auth/*`）收到 401 时，
+ * 整页跳转到 `/login`。整页跳转会触发 proxy 重新评估登录态，且重新加载后
+ * `use-auth` 通过 `/api/auth/me` 自然重置为未登录态，无需显式清理。
+ *
+ * 仅在浏览器环境生效（服务端调用时无副作用）。
+ *
+ * 导出供使用原生 `fetch` 的 api-client（如 `chatApi.streamChat`）复用，
+ * 确保所有请求路径的 401 行为一致。
+ */
+export function handleUnauthorized(url: string): void {
+  if (typeof window === "undefined") return;
+  if (url.startsWith(AUTH_PREFIX)) return;
+  window.location.href = "/login";
 }
 
 /**
@@ -30,6 +49,10 @@ async function fetchJson<T>(
       ...options.headers,
     },
   });
+
+  if (res.status === 401) {
+    handleUnauthorized(url);
+  }
 
   if (!res.ok) {
     let body: Record<string, unknown> = {};
@@ -69,6 +92,9 @@ export async function requestBlob(
 ): Promise<Blob> {
   const url = `${BASE_URL}${path}`;
   const res = await fetch(url, options);
+  if (res.status === 401) {
+    handleUnauthorized(url);
+  }
   if (!res.ok) {
     let body: Record<string, unknown> = {};
     try {
@@ -92,6 +118,9 @@ export async function uploadFile<T>(
     method: "POST",
     body: formData,
   });
+  if (res.status === 401) {
+    handleUnauthorized(url);
+  }
   if (!res.ok) {
     let body: Record<string, unknown> = {};
     try {

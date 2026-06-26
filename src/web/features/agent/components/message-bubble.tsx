@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { User, Bot } from "lucide-react";
 import ToolCallCard from "./tool-call-card";
 import TypingIndicator from "./typing-indicator";
@@ -13,8 +15,8 @@ interface MessageBubbleProps {
  * user 右对齐，assistant 左对齐。
  * assistant 消息上方的工具调用步骤以卡片形式展示。
  *
- * 注：首版以纯文本（whitespace-pre-wrap）渲染 assistant 内容，
- * Markdown 渲染（代码块、表格等）作为后续迭代（需引入 markdown 库）。
+ * assistant 内容以 Markdown 渲染（react-markdown + remark-gfm），
+ * 默认不渲染原始 HTML 以避免注入；user 内容保持纯文本。
  */
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
@@ -52,9 +54,15 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                   : "bg-default-100 text-default-900"
             }`}
           >
-            <p className="whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            {isUser ? (
+              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            ) : (
+              <div className="agent-markdown break-words">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )}
             {message.pending && !message.content && <TypingIndicator />}
           </div>
         )}

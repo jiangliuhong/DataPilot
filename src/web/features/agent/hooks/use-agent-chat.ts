@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { chatApi, parseSSEStream } from "@/web/api-client";
 import type { AgentMessage, ChatStreamEvent } from "@/web/types/agent";
 
@@ -27,27 +27,45 @@ interface UseAgentChatResult {
   streamingMessage: DisplayMessage | null;
   generating: boolean;
   error: string | null;
-  /** 发送消息并流式接收回复。onComplete 在 message_end 后回调（用于刷新历史） */
+  /** 发送消息并流式接收回复。onComplete 在流式到达终态（message_end 或 error）后回调（用于刷新历史） */
   sendMessage: (
     conversationId: number,
     message: string,
     onComplete?: () => void,
   ) => Promise<void>;
+  /** 中止当前生成（"停止生成"） */
+  stop: () => void;
   /** 把后端历史 AgentMessage[] 转换为展示模型 */
   toDisplayMessages: (messages: AgentMessage[]) => DisplayMessage[];
   clearStreaming: () => void;
+}
+
+/** 判断是否为用户主动中止导致的错误 */
+function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  if (err instanceof Error && err.name === "AbortError") return true;
+  return false;
 }
 
 /**
  * 管理流式对话：发送消息、解析 SSE 事件、追加 token、维护工具调用卡片、错误处理。
  *
  * 历史消息由调用方（组件）管理，本 hook 只负责"当前这一轮"的流式状态。
+ *
+ * 终态刷新：无论是正常 message_end 还是出错（SSE error 事件 / 网络中断），
+ * 都会触发 onComplete 回调，由调用方刷新历史与会话列表，保证状态一致。
+ * 卸载时若仍有进行中的请求，会自动中止，避免幽灵流。
  */
 export function useAgentChat(): UseAgentChatResult {
   const [streamingMessage, setStreamingMessage] = useState<DisplayMessage | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  /** 中止当前生成 */
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const sendMessage = useCallback(
     async (
@@ -68,28 +86,49 @@ export function useAgentChat(): UseAgentChatResult {
       };
       setStreamingMessage({ ...draft });
 
+      // 在发起请求前创建 AbortController，支持"停止生成"与卸载清理
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
-        const response = await chatApi.streamChat(conversationId, message);
-        abortRef.current = new AbortController();
+        const response = await chatApi.streamChat(
+          conversationId,
+          message,
+          controller.signal,
+        );
 
         await parseSSEStream(
           response,
           (event: ChatStreamEvent) => {
             setStreamingMessage((prev) => {
               if (!prev) return prev;
-              return applyEvent(prev, event, onComplete);
+              return applyEvent(prev, event);
             });
+            // 终态：message_end（正常完成）或 error（出错）都触发刷新
+            if (event.type === "message_end" || event.type === "error") {
+              if (event.type === "error") setError(event.message);
+              onComplete?.();
+            }
           },
-          abortRef.current.signal,
+          controller.signal,
         );
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "对话出错";
-        setError(msg);
-        setStreamingMessage((prev) =>
-          prev
-            ? { ...prev, pending: false, error: true, content: prev.content || msg }
-            : null,
-        );
+        // 用户主动中止：不作为错误展示，清理临时流式气泡（避免与刷新后的历史重复显示），
+        // 刷新历史落库已接收的部分。
+        if (isAbortError(err)) {
+          setStreamingMessage(null);
+          onComplete?.();
+        } else {
+          const msg = err instanceof Error ? err.message : "对话出错";
+          setError(msg);
+          setStreamingMessage((prev) =>
+            prev
+              ? { ...prev, pending: false, error: true, content: prev.content || msg }
+              : null,
+          );
+          // 网络中断等异常也是终态，触发刷新保证状态一致
+          onComplete?.();
+        }
       } finally {
         setGenerating(false);
         abortRef.current = null;
@@ -97,6 +136,13 @@ export function useAgentChat(): UseAgentChatResult {
     },
     [],
   );
+
+  // 卸载时中止进行中的请求，避免幽灵流
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const clearStreaming = useCallback(() => {
     setStreamingMessage(null);
@@ -126,17 +172,14 @@ export function useAgentChat(): UseAgentChatResult {
     generating,
     error,
     sendMessage,
+    stop,
     toDisplayMessages,
     clearStreaming,
   };
 }
 
 /** 把一个 SSE 事件应用到当前流式消息上 */
-function applyEvent(
-  draft: DisplayMessage,
-  event: ChatStreamEvent,
-  onComplete?: () => void,
-): DisplayMessage {
+function applyEvent(draft: DisplayMessage, event: ChatStreamEvent): DisplayMessage {
   switch (event.type) {
     case "token":
       return { ...draft, content: draft.content + event.value };
@@ -170,8 +213,6 @@ function applyEvent(
         }),
       };
     case "message_end":
-      // 流式完成，触发回调（刷新历史）
-      onComplete?.();
       return { ...draft, id: event.messageId, pending: false };
     case "error":
       return {

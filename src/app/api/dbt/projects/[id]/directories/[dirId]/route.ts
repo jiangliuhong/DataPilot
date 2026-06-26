@@ -1,12 +1,14 @@
 import { directoryIdSchema, updateDirectorySchema } from "@/app/server/schemas/dbt/directory.schema";
 import * as directoryService from "@/app/server/services/dbt/directory.service";
 import { handleValidationError, notFound, apiError, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** PUT /api/dbt/projects/:id/directories/:dirId — 重命名/移动目录 */
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; dirId: string }> },
 ) {
+  await requireAuth();
   const rawParams = await params;
   const parsed = directoryIdSchema.safeParse(rawParams);
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -49,6 +51,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string; dirId: string }> },
 ) {
+  await requireAuth();
   const rawParams = await params;
   const parsed = directoryIdSchema.safeParse(rawParams);
   if (!parsed.success) return handleValidationError(parsed.error);

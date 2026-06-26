@@ -8,12 +8,14 @@ interface UseConversationsResult {
   conversations: AgentConversation[];
   total: number;
   loading: boolean;
+  creating: boolean;
   error: string | null;
   selectedId: number | null;
   refresh: () => Promise<void>;
   select: (id: number | null) => void;
   create: () => Promise<AgentConversation | null>;
   remove: (id: number) => Promise<boolean>;
+  clearError: () => void;
 }
 
 /**
@@ -25,6 +27,7 @@ export function useConversations(): UseConversationsResult {
   const [conversations, setConversations] = useState<AgentConversation[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
@@ -51,6 +54,8 @@ export function useConversations(): UseConversationsResult {
   }, []);
 
   const create = useCallback(async () => {
+    setCreating(true);
+    setError(null);
     try {
       const conversation = await conversationApi.create();
       setConversations((prev) => [conversation, ...prev]);
@@ -59,7 +64,13 @@ export function useConversations(): UseConversationsResult {
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建会话失败");
       return null;
+    } finally {
+      setCreating(false);
     }
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   const remove = useCallback(async (id: number) => {
@@ -78,11 +89,13 @@ export function useConversations(): UseConversationsResult {
     conversations,
     total,
     loading,
+    creating,
     error,
     selectedId,
     refresh,
     select,
     create,
     remove,
+    clearError,
   };
 }

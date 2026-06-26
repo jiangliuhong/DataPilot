@@ -2,12 +2,14 @@ import { projectIdSchema } from "@/app/server/schemas/dbt/project.schema";
 import * as importExportService from "@/app/server/services/dbt/import-export.service";
 import { handleValidationError, notFound, apiError, badRequest, payloadTooLarge } from "@/app/server/errors/api-error";
 import { MAX_IMPORT_FILE_SIZE } from "@/app/server/configs/dbt/constants";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** POST /api/dbt/projects/:id/import — 导入 ZIP 文件 */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

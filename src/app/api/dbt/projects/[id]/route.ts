@@ -1,12 +1,14 @@
 import { updateProjectSchema, projectIdSchema } from "@/app/server/schemas/dbt/project.schema";
 import * as projectService from "@/app/server/services/dbt/project.service";
 import { safeExecute, handleValidationError, apiError, notFound } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects/:id — 项目详情 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -21,6 +23,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -44,6 +47,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

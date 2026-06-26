@@ -3,10 +3,12 @@ import * as projectService from "@/app/server/services/dbt/project.service";
 import * as projectRepo from "@/app/server/repositories/dbt/project.repository";
 import { createProjectSchema, listProjectsQuerySchema } from "@/app/server/schemas/dbt/project.schema";
 import { safeExecute, handleValidationError, apiError, conflict } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects — 项目列表 */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth();
     const query = listProjectsQuerySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
 /** POST /api/dbt/projects — 创建项目 */
 export async function POST(request: Request) {
   try {
+    await requireAuth();
     const body = await request.json();
     const data = createProjectSchema.parse(body);
 

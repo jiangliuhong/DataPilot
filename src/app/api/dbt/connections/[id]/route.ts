@@ -1,12 +1,14 @@
 import * as connectionService from "@/app/server/services/dbt/connection.service";
 import { updateConnectionSchema, connectionIdSchema } from "@/app/server/schemas/dbt/connection.schema";
 import { handleValidationError, apiError, notFound, conflict } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/connections/[id] — 连接详情 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = connectionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -21,6 +23,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = connectionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -47,6 +50,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = connectionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

@@ -1,12 +1,14 @@
 import * as versionService from "@/app/server/services/dbt/version.service";
 import { updateVersionSchema, versionIdSchema } from "@/app/server/schemas/dbt/version.schema";
 import { handleValidationError, apiError, notFound, conflict, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/versions/[id] — 版本详情 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = versionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -21,6 +23,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = versionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -44,6 +47,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = versionIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

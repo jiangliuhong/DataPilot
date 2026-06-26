@@ -5,6 +5,7 @@ import ConversationList from "./conversation-list";
 import MessageList from "./message-list";
 import ChatInput from "./chat-input";
 import EmptyState from "./empty-state";
+import ErrorAlert from "@/web/components/shared/error-alert";
 import { useConversations } from "../hooks/use-conversations";
 import { useConversationMessages } from "../hooks/use-conversation-messages";
 import { useAgentChat } from "../hooks/use-agent-chat";
@@ -19,23 +20,31 @@ export default function AgentChatLayout() {
   const {
     conversations,
     loading: convsLoading,
+    creating: convsCreating,
+    error: convsError,
     selectedId,
     refresh: refreshConvs,
     select,
     create: createConv,
     remove: deleteConv,
+    clearError: clearConvsError,
   } = useConversations();
 
   const {
     messages: history,
+    loading: messagesLoading,
+    error: messagesError,
     load: loadMessages,
     clear: clearMessages,
+    clearError: clearMessagesError,
   } = useConversationMessages();
 
   const {
     streamingMessage,
     generating,
+    error: chatError,
     sendMessage,
+    stop: stopGenerating,
     toDisplayMessages,
     clearStreaming,
   } = useAgentChat();
@@ -73,17 +82,33 @@ export default function AgentChatLayout() {
           conversations={conversations}
           selectedId={selectedId}
           loading={convsLoading}
+          creating={convsCreating}
+          error={convsError}
           onSelect={select}
           onCreate={createConv}
           onDelete={deleteConv}
+          onClearError={clearConvsError}
+          onRetry={refreshConvs}
+          retrying={convsLoading}
         />
       </aside>
 
       {/* 右侧对话区 */}
       <section className="flex flex-1 flex-col bg-background">
+        {selectedId && (
+          <ErrorAlert
+            message={messagesError}
+            onClose={clearMessagesError}
+            onRetry={() => loadMessages(selectedId)}
+            isRetrying={messagesLoading}
+          />
+        )}
+        {selectedId && chatError && !messagesError && (
+          <ErrorAlert message={chatError} onClose={clearStreaming} />
+        )}
         {selectedId ? (
           displayMessages.length === 0 && !streamingMessage ? (
-            <EmptyState type="no-messages" />
+            messagesError ? null : <EmptyState type="no-messages" />
           ) : (
             <MessageList
               messages={displayMessages}
@@ -94,7 +119,12 @@ export default function AgentChatLayout() {
           <EmptyState type="no-conversation" />
         )}
 
-        <ChatInput disabled={!selectedId || generating} onSend={handleSend} />
+        <ChatInput
+          disabled={!selectedId || generating}
+          generating={generating}
+          onSend={handleSend}
+          onStop={stopGenerating}
+        />
       </section>
     </div>
   );

@@ -3,12 +3,14 @@ import { createDirectorySchema, listDirectoriesQuerySchema } from "@/app/server/
 import * as directoryService from "@/app/server/services/dbt/directory.service";
 import * as projectService from "@/app/server/services/dbt/project.service";
 import { handleValidationError, notFound, apiError, conflict } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects/:id/directories — 目录列表 */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -35,6 +37,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);

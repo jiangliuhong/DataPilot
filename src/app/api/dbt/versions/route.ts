@@ -3,10 +3,12 @@ import * as versionService from "@/app/server/services/dbt/version.service";
 import * as versionRepo from "@/app/server/repositories/dbt/version.repository";
 import { createVersionSchema, listVersionsQuerySchema } from "@/app/server/schemas/dbt/version.schema";
 import { handleValidationError, apiError, conflict } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/versions — 版本列表 */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth();
     const query = listVersionsQuerySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
 /** POST /api/dbt/versions — 创建版本 */
 export async function POST(request: Request) {
   try {
+    await requireAuth();
     const body = await request.json();
     const data = createVersionSchema.parse(body);
 

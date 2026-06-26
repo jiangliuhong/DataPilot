@@ -3,15 +3,21 @@
 import { Plus, Trash2, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import ConfirmModal from "@/web/components/shared/confirm-modal";
+import ErrorAlert from "@/web/components/shared/error-alert";
 import type { AgentConversation } from "@/web/types/agent";
 
 interface ConversationListProps {
   conversations: AgentConversation[];
   selectedId: number | null;
   loading: boolean;
+  creating: boolean;
+  error: string | null;
   onSelect: (id: number) => void;
   onCreate: () => void;
   onDelete: (id: number) => void;
+  onClearError: () => void;
+  onRetry: () => void;
+  retrying: boolean;
 }
 
 /** 会话列表面板（新建按钮、会话项、删除按钮、选中高亮） */
@@ -19,9 +25,14 @@ export default function ConversationList({
   conversations,
   selectedId,
   loading,
+  creating,
+  error,
   onSelect,
   onCreate,
   onDelete,
+  onClearError,
+  onRetry,
+  retrying,
 }: ConversationListProps) {
   const [deleteTarget, setDeleteTarget] = useState<AgentConversation | null>(null);
 
@@ -38,13 +49,21 @@ export default function ConversationList({
         <span className="text-sm font-semibold text-default-700">会话</span>
         <button
           type="button"
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-primary-600 hover:bg-primary-50"
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
           onClick={onCreate}
+          disabled={creating}
         >
           <Plus size={14} />
-          新建
+          {creating ? "创建中…" : "新建"}
         </button>
       </div>
+
+      <ErrorAlert
+        message={error}
+        onClose={onClearError}
+        onRetry={onRetry}
+        isRetrying={retrying}
+      />
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (

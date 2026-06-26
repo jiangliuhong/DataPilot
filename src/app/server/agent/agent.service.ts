@@ -52,15 +52,6 @@ export async function streamChat(
       content: message,
     });
 
-    // 首条消息生成标题（仅当标题仍为默认"新对话"）
-    if (conversation.title === "新对话") {
-      await conversationRepo.updateTitle(
-        conversationId,
-        userId,
-        message.slice(0, 30),
-      );
-    }
-
     // 3. 加载历史上下文（含刚写入的 user 消息），转换为 LangChain 消息序列
     const historyRows = await messageRepo.findByConversationId(conversationId);
     const history = dbMessagesToLangChain(historyRows);
@@ -136,7 +127,17 @@ export async function streamChat(
       }
     }
 
-    // 6. 持久化 assistant 消息（含本轮工具调用），emit message_end
+    // 6. 标题生成：仅在对话成功产出最终文本后执行（首条消息且标题仍为默认"新对话"）。
+    //    失败路径（catch emit error）不会更新标题，保持"新对话"，避免脏会话。
+    if (conversation.title === "新对话" && message.trim().length > 0) {
+      await conversationRepo.updateTitle(
+        conversationId,
+        userId,
+        message.slice(0, 30),
+      );
+    }
+
+    // 7. 持久化 assistant 消息（含本轮工具调用），emit message_end
     const created = await messageRepo.create({
       conversationId,
       role: "assistant",

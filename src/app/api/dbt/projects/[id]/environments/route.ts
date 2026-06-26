@@ -3,12 +3,14 @@ import * as projectEnvService from "@/app/server/services/dbt/project-environmen
 import { bindEnvironmentSchema, projectIdParamSchema } from "@/app/server/schemas/dbt/project-environment.schema";
 import { DEFAULT_PAGE_SIZE } from "@/app/server/configs/dbt/constants";
 import { handleValidationError, apiError, notFound, conflict, badRequest } from "@/app/server/errors/api-error";
+import { requireAuth } from "@/app/server/lib/auth-guard";
 
 /** GET /api/dbt/projects/[id]/environments — 查看项目绑定的环境列表 */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdParamSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
@@ -34,6 +36,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await requireAuth();
   const { id } = await params;
   const parsed = projectIdParamSchema.safeParse({ id });
   if (!parsed.success) return handleValidationError(parsed.error);
