@@ -159,6 +159,10 @@ export interface Environment {
   versionId: number;
   connectionId: number;
   status: "active" | "inactive";
+  initializationStatus: "pending" | "running" | "initialized" | "failed";
+  venvPath: string | null;
+  initializedAt: string | null;
+  lastErrorMessage: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

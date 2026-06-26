@@ -20,6 +20,15 @@ export const dbtRuntimeEnvironments = sqliteTable(
     status: text("status", { length: 8, enum: ["active", "inactive"] })
       .notNull()
       .default("active"),
+    initializationStatus: text("initialization_status", {
+      length: 20,
+      enum: ["pending", "running", "initialized", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    venvPath: text("venv_path", { length: 512 }),
+    initializedAt: integer("initialized_at", { mode: "timestamp" }),
+    lastErrorMessage: text("last_error_message"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),

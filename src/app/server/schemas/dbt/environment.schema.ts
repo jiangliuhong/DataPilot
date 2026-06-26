@@ -21,6 +21,9 @@ export const environmentIdSchema = z.object({
   id: z.coerce.number().int().positive("无效的环境 ID"),
 });
 
+/** 初始化触发参数（复用 environmentIdSchema 校验 path id，无 body） */
+export const initializeEnvironmentSchema = environmentIdSchema;
+
 /** 环境列表查询参数 */
 export const listEnvironmentsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),

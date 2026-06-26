@@ -12,11 +12,20 @@ export const fileApi = {
     projectId: number,
     params?: PaginationParams & {
       fileType?: string;
-      directoryId?: number;
+      // undefined = 不过滤目录；null = 仅项目根目录；number = 指定目录
+      directoryId?: number | null;
     },
   ) {
+    const { directoryId, ...rest } = params ?? {};
+    // null 表示「项目根目录」，后端 schema 接受字面量 "null"/"root"。
+    const query: Parameters<typeof buildQuery>[0] = { ...rest };
+    if (directoryId === null) {
+      query.directoryId = "null";
+    } else if (directoryId !== undefined) {
+      query.directoryId = directoryId;
+    }
     return request<PaginatedResponse<ProjectFile>>(
-      `/projects/${projectId}/files${buildQuery(params ?? {})}`,
+      `/projects/${projectId}/files${buildQuery(query)}`,
     );
   },
 

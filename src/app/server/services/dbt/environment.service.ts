@@ -2,6 +2,9 @@ import * as environmentRepo from "@/app/server/repositories/dbt/environment.repo
 import * as versionRepo from "@/app/server/repositories/dbt/version.repository";
 import * as connectionRepo from "@/app/server/repositories/dbt/connection.repository";
 import * as projectEnvRepo from "@/app/server/repositories/dbt/project-environment.repository";
+import { rm } from "node:fs/promises";
+
+export { initializeEnvironment } from "./environment-init.service";
 
 /** 适配器兼容性校验 */
 function validateAdapterCompatibility(
@@ -80,7 +83,7 @@ export async function updateEnvironment(
   return environmentRepo.updateById(id, data);
 }
 
-/** 删除运行环境（含引用检查） */
+/** 删除运行环境（含引用检查与 venv 目录清理） */
 export async function deleteEnvironment(id: number) {
   const environment = await environmentRepo.findById(id);
   if (!environment) return null;
@@ -91,5 +94,16 @@ export async function deleteEnvironment(id: number) {
   }
 
   await environmentRepo.softDeleteById(id);
+
+  // 清理 venv 目录；失败不阻塞删除，仅记日志
+  const venvPath = environment.venvPath;
+  if (venvPath) {
+    try {
+      await rm(venvPath, { recursive: true, force: true });
+    } catch (err) {
+      console.error(`删除环境 ${id} 的 venv 目录 ${venvPath} 失败:`, err);
+    }
+  }
+
   return environment;
 }
