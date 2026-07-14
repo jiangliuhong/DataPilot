@@ -139,7 +139,7 @@
         <tr><td><code>description</code></td><td>string</td><td>否</td><td>项目描述</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects \
   -H "Content-Type: application/json" \
   -d '{"name": "analytics_project", "description": "核心分析项目"}'</pre>
       <h4>成功响应 <span class="status status-2xx">201</span></h4>
@@ -174,7 +174,7 @@
         <tr><td><code>status</code></td><td>string</td><td>-</td><td>过滤状态：<code>active</code> 或 <code>archived</code></td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl http://localhost:3000/api/dbt/projects?limit=10&amp;offset=0&amp;status=active</pre>
+<pre>curl http://localhost:3010/api/dbt/projects?limit=10&amp;offset=0&amp;status=active</pre>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
 <pre>{
   <span class="key">"items"</span>: [{ <span class="key">"id"</span>: <span class="num">1</span>, <span class="key">"name"</span>: <span class="str">"..."</span>, ... }],
@@ -221,7 +221,7 @@
         <tr><td><code>status</code></td><td>string</td><td><code>active</code> 或 <code>archived</code></td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1 \
+<pre>curl -X PUT http://localhost:3010/api/dbt/projects/1 \
   -H "Content-Type: application/json" \
   -d '{"name": "new_name", "status": "archived"}'</pre>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
@@ -261,7 +261,7 @@
         <tr><td><code>parentId</code></td><td>number | null</td><td>否</td><td>父目录 ID，null 或不传表示根目录</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/directories \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects/1/directories \
   -H "Content-Type: application/json" \
   -d '{"name": "models", "parentId": null}'</pre>
       <h4>成功响应 <span class="status status-2xx">201</span></h4>
@@ -278,7 +278,7 @@
   <span class="key">"deletedAt"</span>: <span class="num">null</span>
 }</pre>
       <h4>创建嵌套目录示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/directories \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects/1/directories \
   -H "Content-Type: application/json" \
   -d '{"name": "staging", "parentId": 1}'</pre>
       <p>结果：<code>path = "models/staging"</code>，<code>depth = 1</code></p>
@@ -345,11 +345,11 @@
         <tr><td><code>parentId</code></td><td>number | null</td><td>新的父目录 ID（移动）</td></tr>
       </table>
       <h4>重命名示例</h4>
-<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/directories/2 \
+<pre>curl -X PUT http://localhost:3010/api/dbt/projects/1/directories/2 \
   -H "Content-Type: application/json" \
   -d '{"name": "staging_new"}'</pre>
       <h4>移动示例</h4>
-<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/directories/2 \
+<pre>curl -X PUT http://localhost:3010/api/dbt/projects/1/directories/2 \
   -H "Content-Type: application/json" \
   -d '{"parentId": 5}'</pre>
       <h4>错误响应</h4>
@@ -388,7 +388,7 @@
         <tr><td><code>directoryId</code></td><td>number | null</td><td>否</td><td>所属目录 ID，null 表示项目根目录</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/files \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects/1/files \
   -H "Content-Type: application/json" \
   -d '{"name": "stg_users.sql", "directoryId": 2, "content": "SELECT * FROM users"}'</pre>
       <h4>成功响应 <span class="status status-2xx">201</span></h4>
@@ -467,7 +467,7 @@
         <tr><td><code>directoryId</code></td><td>number | null</td><td>移动到新目录</td></tr>
       </table>
       <h4>更新内容示例</h4>
-<pre>curl -X PUT http://localhost:3000/api/dbt/projects/1/files/1 \
+<pre>curl -X PUT http://localhost:3010/api/dbt/projects/1/files/1 \
   -H "Content-Type: application/json" \
   -d '{"content": "SELECT id, name FROM users WHERE active = true"}'</pre>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
@@ -512,7 +512,7 @@
         <tr><td><code>dependencies[].version</code></td><td>string</td><td>是</td><td>依赖包版本</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/versions \
+<pre>curl -X POST http://localhost:3010/api/dbt/versions \
   -H "Content-Type: application/json" \
   -d '{
     "name": "dbt-core-1.8",
@@ -656,7 +656,7 @@
         <tr><td><code>extraConfig</code></td><td>object</td><td>否</td><td>额外配置，键值对</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/connections \
+<pre>curl -X POST http://localhost:3010/api/dbt/connections \
   -H "Content-Type: application/json" \
   -d '{
     "name": "prod_mysql",
@@ -798,7 +798,7 @@
         <tr><td><code>connectionId</code></td><td>number</td><td>是</td><td>关联的数据库连接 ID</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/environments \
+<pre>curl -X POST http://localhost:3010/api/dbt/environments \
   -H "Content-Type: application/json" \
   -d '{"name": "production", "versionId": 1, "connectionId": 1}'</pre>
       <h4>成功响应 <span class="status status-2xx">201</span></h4>
@@ -960,7 +960,7 @@
         <tr><td><code>environmentAlias</code></td><td>string</td><td>否</td><td>环境别名，最长 255 字符</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/environments \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects/1/environments \
   -H "Content-Type: application/json" \
   -d '{"environmentId": 1, "environmentAlias": "prod"}'</pre>
       <h4>成功响应 <span class="status status-2xx">201</span></h4>
@@ -1016,7 +1016,7 @@
         <tr><td><code>file</code></td><td>File</td><td>ZIP 压缩包，最大 50MB</td></tr>
       </table>
       <h4>请求示例</h4>
-<pre>curl -X POST http://localhost:3000/api/dbt/projects/1/import \
+<pre>curl -X POST http://localhost:3010/api/dbt/projects/1/import \
   -F "file=@my_dbt_project.zip"</pre>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
 <pre>{
@@ -1039,7 +1039,7 @@
       <h4>说明</h4>
       <p>将项目导出为标准 dbt 工程目录结构的 ZIP 文件。</p>
       <h4>请求示例</h4>
-<pre>curl -O http://localhost:3000/api/dbt/projects/1/export</pre>
+<pre>curl -O http://localhost:3010/api/dbt/projects/1/export</pre>
       <h4>成功响应 <span class="status status-2xx">200</span></h4>
       <p>返回 ZIP 文件下载。</p>
       <table>

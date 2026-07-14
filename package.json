@@ -12,7 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:sqlite:migrate": "node scripts/sqlite/migrate.js",
-    "db:sqlite:demo": "node scripts/sqlite/run-demo-init.js"
+    "db:sqlite:demo": "node scripts/sqlite/init-demo.js"
   },
   "dependencies": {
     "@heroui/react": "^3.1.0",

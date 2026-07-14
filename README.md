@@ -14,7 +14,17 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3010](http://localhost:3010) with your browser to see the result.
+
+## Initialize the SQLite demo
+
+Create or migrate the configured SQLite database and load the complete demo dataset in one command:
+
+```bash
+pnpm db:sqlite:demo
+```
+
+The command is idempotent. To select another database file, set `DATABASE_URL` before running it.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

@@ -2,8 +2,8 @@
 -- DataPilot — SQLite 演示数据初始化脚本（种子数据）
 -- =============================================================================
 --
--- 用途：向一个已经建好表结构（见 src/app/db/migrations/sqlite/）的 SQLite
---       数据库中插入一套可演示的示例数据，方便本地开发与体验。
+-- 用途：由 init-demo.js 在完成全部 Drizzle 迁移后执行，向 SQLite 数据库
+--       插入一套可演示的示例数据，方便本地开发与体验。
 --
 -- 仅包含种子数据（DML），不包含任何建表语句（DDL）。表结构由 Drizzle 的
 -- 迁移（drizzle-kit migrate）统一管理，符合 AGENTS.md 中「迁移是表结构唯一
@@ -11,13 +11,8 @@
 --
 -- 幂等：所有插入使用 INSERT OR IGNORE，重复执行不会报错、不会重复插入。
 --
--- 用法（二选一）：
---   1) pnpm db:sqlite:demo                # 推荐，走 better-sqlite3，与运行时一致
---   2) sqlite3 ./data.db < scripts/sqlite/demo-init.sql
---
--- 前置条件：
---   - 已执行 `DB_DRIVER=sqlite pnpm db:migrate` 建表
---   - DB_DRIVER=sqlite 且 DATABASE_URL 指向同一个 .db 文件
+-- 推荐用法：pnpm db:sqlite:demo
+-- 该命令会自动创建数据库、执行迁移并写入本文件中的演示数据，无需前置步骤。
 --
 -- 时间戳列：SQLite schema 中 created_at / updated_at 是
 --   integer (mode: "timestamp")，即 Unix 秒。这里统一使用 unixepoch()。
@@ -132,7 +127,7 @@ INSERT OR IGNORE INTO `dbt_projects` (
 ) VALUES (
   1,
   'demo-project',
-  '由 scripts/sqlite/demo-init.sql 创建的示例 dbt 项目，用于本地体验。',
+  '由 SQLite demo 初始化脚本创建的示例 dbt 项目，用于本地体验。',
   'active',
   unixepoch(),
   unixepoch()

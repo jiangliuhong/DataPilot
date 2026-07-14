@@ -17,27 +17,37 @@ const Database = require("better-sqlite3");
 const { drizzle } = require("drizzle-orm/better-sqlite3");
 const { migrate } = require("drizzle-orm/better-sqlite3/migrator");
 
-const dbUrl = process.env.DATABASE_URL ?? "./data.db";
 const migrationsFolder = path.join(__dirname, "..", "..", "src", "app", "db", "migrations", "sqlite");
 
-if (!fs.existsSync(migrationsFolder)) {
-  console.error(`找不到迁移目录: ${migrationsFolder}`);
-  console.error("请先执行: DB_DRIVER=sqlite pnpm db:generate");
-  process.exit(1);
+function migrateSqlite(dbUrl = process.env.DATABASE_URL ?? "./data.db") {
+  if (!fs.existsSync(migrationsFolder)) {
+    throw new Error(
+      `找不到迁移目录: ${migrationsFolder}\n请先执行: DB_DRIVER=sqlite pnpm db:generate`,
+    );
+  }
+
+  const sqlite = new Database(dbUrl);
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
+
+  try {
+    const db = drizzle(sqlite);
+    migrate(db, { migrationsFolder });
+  } finally {
+    sqlite.close();
+  }
 }
 
-const sqlite = new Database(dbUrl);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+if (require.main === module) {
+  const dbUrl = process.env.DATABASE_URL ?? "./data.db";
 
-const db = drizzle(sqlite);
-
-try {
-  migrate(db, { migrationsFolder });
-  console.log(`✓ SQLite 迁移完成 -> ${dbUrl}`);
-} catch (err) {
-  console.error("✗ 迁移失败:", err);
-  process.exitCode = 1;
-} finally {
-  sqlite.close();
+  try {
+    migrateSqlite(dbUrl);
+    console.log(`✓ SQLite 迁移完成 -> ${dbUrl}`);
+  } catch (err) {
+    console.error("✗ 迁移失败:", err);
+    process.exitCode = 1;
+  }
 }
+
+module.exports = { migrateSqlite };
