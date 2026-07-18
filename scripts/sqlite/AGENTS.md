@@ -7,6 +7,7 @@
 - `demo-init.sql` 是全新 SQLite 演示数据库的种子数据唯一来源，只允许包含 DML，不得包含建表、改表、索引等 DDL。
 - 表结构只能通过 `src/app/db/schema/sqlite/` 与 Drizzle 迁移维护；不得手工修改已生成的迁移文件。
 - `migrate.js` 只负责执行迁移，`init-demo.js` 只负责迁移后原子执行种子 SQL。不要把具体演示数据写进 JavaScript。
+- `init-demo.js` 额外负责：当项目根目录没有 `.env` 时，生成开箱即用的 demo 配置（`DB_DRIVER`、`DATABASE_URL`、随机生成的 `DBT_ENCRYPTION_KEY` 与 `AUTH_JWT_SECRET`）。密钥必须用 `crypto.randomBytes` 现场生成；已存在的 `.env` 一律跳过，不得覆盖。
 
 ## 修改演示数据的步骤
 
