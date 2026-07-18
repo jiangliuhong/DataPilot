@@ -65,3 +65,4 @@ next-env.d.ts
 .agents
 skill-lock.json
 venvs/
+.zcode
