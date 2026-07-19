@@ -53,19 +53,13 @@ function sanitizeName(name: string): string {
 
 /**
  * 解析某环境的 venv 路径。
- * 按环境名安全化命名；安全化后为空或与已存在目录冲突时回退 env-<id>。
+ * 按环境名安全化命名。无论目录是否已存在均返回该路径——
+ * runInitialization 会在每次创建 venv 前清理它。
  */
 async function resolveVenvPath(envId: number, name: string): Promise<string> {
   const root = getVenvRoot();
-  const preferred = path.join(root, sanitizeName(name));
-  try {
-    await fs.access(preferred);
-    // 目录已存在——若本次是新建 venv，复用即可；但若属于其他环境（理论上不会，因为名唯一），回退
-    return preferred;
-  } catch {
-    // 不存在，用首选
-    return preferred;
-  }
+  void envId; // 预留：未来若需基于 id 做冲突回退
+  return path.join(root, sanitizeName(name));
 }
 
 /**
@@ -111,6 +105,8 @@ async function runInitialization(envId: number): Promise<void> {
     // —— 步骤 1：创建虚拟环境 ——
     publish(t, "status", { status: "running", step: "creating-venv" });
     await fs.mkdir(path.dirname(venvPath), { recursive: true });
+    // 重新初始化时先清理旧 venv 目录：在残留目录上重建 venv 会导致内部 ensurepip 失败
+    await fs.rm(venvPath, { recursive: true, force: true });
     await spawnStreaming(pythonBin, ["-m", "venv", venvPath], {
       onLine: (stream, line) => publish(t, "log", { stream, line }),
     });
