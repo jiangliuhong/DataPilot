@@ -5,6 +5,7 @@ import ProjectDetail from "@/web/features/project/components/project-detail";
 import VersionList from "@/web/features/dbt-version/components/version-list";
 import ConnectionList from "@/web/features/dbt-connection/components/connection-list";
 import EnvironmentList from "@/web/features/dbt-environment/components/environment-list";
+import TaskList from "@/web/features/dbt-task/components/task-list";
 import AgentChatLayout from "@/web/features/agent/components/agent-chat-layout";
 import { Card } from "@heroui/react";
 
@@ -65,6 +66,10 @@ export default function ContentPanel({
     onViewChange?.("project-detail", { projectId });
   };
 
+  const handleViewTasks = (projectId: number) => {
+    onViewChange?.("project-tasks", { projectId });
+  };
+
   const handleBackToList = () => {
     onViewChange?.("project-list");
   };
@@ -75,6 +80,17 @@ export default function ContentPanel({
     return (
       <div className="p-6">
         <ProjectDetail projectId={projectId} onBack={handleBackToList} />
+      </div>
+    );
+  }
+
+  // 任务调度页：项目作用域
+  if (activeKey === "project-tasks") {
+    const projectId = viewParams?.projectId as number;
+    if (!projectId) return null;
+    return (
+      <div className="p-6">
+        <TaskList projectId={projectId} />
       </div>
     );
   }
@@ -90,7 +106,9 @@ export default function ContentPanel({
 
   const contentMap: Record<string, React.ReactNode> = {
     dashboard: <DashboardContent />,
-    "project-list": <ProjectList onViewDetail={handleViewDetail} />,
+    "project-list": (
+      <ProjectList onViewDetail={handleViewDetail} onViewTasks={handleViewTasks} />
+    ),
     "dbt-version-list": <VersionList />,
     "dbt-connection-list": <ConnectionList />,
     "dbt-environment-list": <EnvironmentList />,

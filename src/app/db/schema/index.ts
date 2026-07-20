@@ -34,6 +34,8 @@ export const dbtVersions = activeSchema.dbtVersions;
 export const dbtDatabaseConnections = activeSchema.dbtDatabaseConnections;
 export const dbtRuntimeEnvironments = activeSchema.dbtRuntimeEnvironments;
 export const dbtProjectEnvironments = activeSchema.dbtProjectEnvironments;
+export const dbtTasks = activeSchema.dbtTasks;
+export const dbtTaskRuns = activeSchema.dbtTaskRuns;
 export const users = activeSchema.users;
 export const agentConversations = activeSchema.agentConversations;
 export const agentMessages = activeSchema.agentMessages;
@@ -54,6 +56,10 @@ export type {
   DbtRuntimeEnvironment,
   NewDbtProjectEnvironment,
   DbtProjectEnvironment,
+  NewDbtTask,
+  DbtTask,
+  NewDbtTaskRun,
+  DbtTaskRun,
   NewUser,
   User,
   NewAgentConversation,

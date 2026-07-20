@@ -62,6 +62,17 @@ export function getVenvRoot(): string {
 }
 
 /**
+ * 解析任务运行工作区根目录。
+ * 优先读取 DBT_TASK_WORKSPACE_ROOT 环境变量，未设置时默认使用进程当前工作目录下的 task-workspaces/。
+ * 每次任务运行会在该目录下按 `<projectId>/<runId>/` 隔离实例化。
+ * 返回绝对路径。
+ */
+export function getTaskWorkspaceRoot(): string {
+  const configured = process.env.DBT_TASK_WORKSPACE_ROOT;
+  return path.resolve(configured || path.join(process.cwd(), "task-workspaces"));
+}
+
+/**
  * 读取 pip 镜像源。
  * 优先读取 DBT_PIP_INDEX_URL 环境变量，未设置时使用默认清华 TUNA 镜像。
  */

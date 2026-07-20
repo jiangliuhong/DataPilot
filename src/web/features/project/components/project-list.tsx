@@ -17,9 +17,10 @@ const statusColorMap: Record<string, "accent" | "default"> = {
 
 interface ProjectListProps {
   onViewDetail?: (projectId: number) => void;
+  onViewTasks?: (projectId: number) => void;
 }
 
-export default function ProjectList({ onViewDetail }: ProjectListProps) {
+export default function ProjectList({ onViewDetail, onViewTasks }: ProjectListProps) {
   const { data, loading, params, setFilters, setPage, refresh } = useProjects();
   const [formOpen, setFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -162,6 +163,13 @@ export default function ProjectList({ onViewDetail }: ProjectListProps) {
                         }
                       >
                         文件编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => onViewTasks?.(project.id)}
+                      >
+                        任务调度
                       </Button>
                       <Button
                         variant="ghost"

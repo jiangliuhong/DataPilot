@@ -6,15 +6,18 @@ import { dbtVersions } from "../schema/sqlite/dbt-version";
 import { dbtDatabaseConnections } from "../schema/sqlite/dbt-database-connection";
 import { dbtRuntimeEnvironments } from "../schema/sqlite/dbt-runtime-environment";
 import { dbtProjectEnvironments } from "../schema/sqlite/dbt-project-environment";
+import { dbtTasks } from "../schema/sqlite/dbt-task";
+import { dbtTaskRuns } from "../schema/sqlite/dbt-task-run";
 import { users } from "../schema/sqlite/user";
 import { agentConversations } from "../schema/sqlite/agent-conversation";
 import { agentMessages } from "../schema/sqlite/agent-message";
 
-/** dbt_projects → dbt_directories 一对多 + 项目环境绑定 */
+/** dbt_projects → dbt_directories 一对多 + 项目环境绑定 + 任务 */
 export const dbtProjectsRelations = relations(dbtProjects, ({ many }) => ({
   directories: many(dbtDirectories),
   files: many(dbtFiles),
   projectEnvironments: many(dbtProjectEnvironments),
+  tasks: many(dbtTasks),
 }));
 
 /** dbt_directories 自引用 + 关联文件 */
@@ -59,7 +62,7 @@ export const dbtDatabaseConnectionsRelations = relations(
   }),
 );
 
-/** dbt_runtime_environments → dbt_versions + dbt_database_connections + 项目绑定 */
+/** dbt_runtime_environments → dbt_versions + dbt_database_connections + 项目绑定 + 任务 */
 export const dbtRuntimeEnvironmentsRelations = relations(
   dbtRuntimeEnvironments,
   ({ one, many }) => ({
@@ -72,6 +75,7 @@ export const dbtRuntimeEnvironmentsRelations = relations(
       references: [dbtDatabaseConnections.id],
     }),
     projectEnvironments: many(dbtProjectEnvironments),
+    tasks: many(dbtTasks),
   }),
 );
 
@@ -89,6 +93,27 @@ export const dbtProjectEnvironmentsRelations = relations(
     }),
   }),
 );
+
+/** dbt_tasks → dbt_projects + dbt_runtime_environments + 运行记录一对多 */
+export const dbtTasksRelations = relations(dbtTasks, ({ one, many }) => ({
+  project: one(dbtProjects, {
+    fields: [dbtTasks.projectId],
+    references: [dbtProjects.id],
+  }),
+  environment: one(dbtRuntimeEnvironments, {
+    fields: [dbtTasks.environmentId],
+    references: [dbtRuntimeEnvironments.id],
+  }),
+  runs: many(dbtTaskRuns),
+}));
+
+/** dbt_task_runs → dbt_tasks */
+export const dbtTaskRunsRelations = relations(dbtTaskRuns, ({ one }) => ({
+  task: one(dbtTasks, {
+    fields: [dbtTaskRuns.taskId],
+    references: [dbtTasks.id],
+  }),
+}));
 
 /** agent_conversations → users + agent_messages 一对多 */
 export const agentConversationsRelations = relations(

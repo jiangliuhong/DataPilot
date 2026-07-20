@@ -5,6 +5,7 @@ export { versionApi } from "./version";
 export { connectionApi } from "./connection";
 export { environmentApi } from "./environment";
 export { projectEnvironmentApi } from "./project-environment";
+export { taskApi } from "./task";
 export { authApi } from "./auth";
 export type { AuthUser } from "./auth";
 export { conversationApi, chatApi, parseSSEStream } from "./agent";
