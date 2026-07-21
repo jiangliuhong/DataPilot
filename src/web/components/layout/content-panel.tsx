@@ -90,7 +90,7 @@ export default function ContentPanel({
     if (!projectId) return null;
     return (
       <div className="p-6">
-        <TaskList projectId={projectId} />
+        <TaskList projectId={projectId} onBack={handleBackToList} />
       </div>
     );
   }

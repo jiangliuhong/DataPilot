@@ -5,9 +5,8 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/app/server/configs/dbt/const
 const adapterPackageSchema = z.object({
   name: z.string().min(1, "适配器包名称不能为空"),
   version: z.string().min(1, "适配器包版本不能为空"),
-  supportedDatabases: z
-    .array(z.string().min(1))
-    .min(1, "至少支持一种数据库类型"),
+  // 空数组表示通配：该适配器包不限定数据库类型，兼容性校验时视为支持所有数据库。
+  supportedDatabases: z.array(z.string().min(1)).default([]),
 });
 
 /** Python 依赖结构 */

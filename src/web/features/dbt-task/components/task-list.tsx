@@ -14,6 +14,7 @@ import type { Task, CreateTaskInput, UpdateTaskInput } from "@/web/types/dbt";
 interface TaskListProps {
   projectId: number;
   projectName?: string;
+  onBack?: () => void;
 }
 
 /** 任务命令中文标签 */
@@ -26,7 +27,7 @@ const COMMAND_LABEL: Record<string, string> = {
   snapshot: "snapshot",
 };
 
-export default function TaskList({ projectId }: TaskListProps) {
+export default function TaskList({ projectId, onBack }: TaskListProps) {
   const { data, loading, params, setPage, refresh } = useTasks(projectId);
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -72,11 +73,18 @@ export default function TaskList({ projectId }: TaskListProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">任务调度</h2>
-          <p className="text-default-500 mt-1">
-            管理 dbt 任务（命令 + 参数 + 目标环境），手动触发执行
-          </p>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button variant="ghost" size="sm" onPress={onBack}>
+              ← 返回
+            </Button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold">任务调度</h2>
+            <p className="text-default-500 mt-1">
+              管理 dbt 任务（命令 + 参数 + 目标环境），手动触发执行
+            </p>
+          </div>
         </div>
         <Button
           variant="primary"

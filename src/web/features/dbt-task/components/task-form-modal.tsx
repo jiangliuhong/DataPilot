@@ -13,6 +13,7 @@ import {
   useOverlayState,
 } from "@heroui/react";
 import { projectEnvironmentApi } from "@/web/api-client";
+import { humanizeError } from "@/web/lib/humanize-error";
 import type {
   Task,
   CreateTaskInput,
@@ -118,6 +119,7 @@ export default function TaskFormModal({
     setError(null);
     try {
       const payload = {
+        projectId,
         name: name.trim(),
         environmentId: Number(environmentId),
         description: description.trim() || undefined,
@@ -131,7 +133,7 @@ export default function TaskFormModal({
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
+      setError(humanizeError(err));
     } finally {
       setLoading(false);
     }

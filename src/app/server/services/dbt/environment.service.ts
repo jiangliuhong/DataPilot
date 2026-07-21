@@ -12,7 +12,10 @@ function validateAdapterCompatibility(
   databaseType: string,
 ): void {
   const supported = adapterPackages.some((pkg) =>
-    pkg.supportedDatabases.includes(databaseType),
+    // 空数组视为通配：不限定数据库类型，视为支持所有数据库
+    pkg.supportedDatabases.length === 0
+      ? true
+      : pkg.supportedDatabases.includes(databaseType),
   );
   if (!supported) {
     throw new Error(
