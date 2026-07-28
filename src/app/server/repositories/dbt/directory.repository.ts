@@ -137,3 +137,76 @@ export async function softDeleteByProjectId(projectId: number) {
       ),
     );
 }
+
+// ===========================================================================
+// 以下方法供 deepagents DbProjectBackend 使用（按路径寻址，而非 directoryId）
+// ===========================================================================
+
+/** 按完整路径精确查询目录（排除软删除）。path 形如 "models/staging"。 */
+export async function findByPath(projectId: number, path: string) {
+  const [row] = await db
+    .select()
+    .from(dbtDirectories)
+    .where(
+      and(
+        eq(dbtDirectories.projectId, projectId),
+        eq(dbtDirectories.path, path),
+        isNull(dbtDirectories.deletedAt),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * 等价于 `mkdir -p`：沿 segments 逐级查找/创建目录，返回最末级 directoryId。
+ *
+ * - segments = [] 或 [""] → 返回 null（项目根）
+ * - segments = ["models","staging"] → 确保 models 及 models/staging 存在，返回后者的 id
+ *
+ * 物化路径与 depth 参考现有 directory.service.createDirectory 的计算方式：
+ *   根级目录 path=name, depth=0；子级 path=`${parent.path}/${name}`, depth=parent.depth+1。
+ *
+ * 注意：本方法不做循环检测（调用方保证 segments 是干净的路径段）。
+ */
+export async function ensurePath(
+  projectId: number,
+  segments: string[],
+): Promise<number | null> {
+  const clean = segments.filter((s) => s.length > 0);
+  if (clean.length === 0) return null;
+
+  let parentId: number | null = null;
+  let parentPath = "";
+  let parentDepth = -1;
+
+  for (const name of clean) {
+    const path = parentPath === "" ? name : `${parentPath}/${name}`;
+    const depth = parentDepth + 1;
+
+    // 先查（同父目录下同名 + 未软删）
+    let dir = await findByPath(projectId, path);
+
+    if (!dir) {
+      // 不存在则创建（参考 createDirectory 的字段计算）
+      const created = await create({
+        projectId,
+        parentId,
+        name,
+        path,
+        depth,
+        sortOrder: 0,
+      });
+      dir = created;
+    }
+
+    if (!dir) {
+      throw new Error(`ensurePath 失败：无法创建目录 ${path}`);
+    }
+    parentId = dir.id;
+    parentPath = path;
+    parentDepth = depth;
+  }
+
+  return parentId;
+}

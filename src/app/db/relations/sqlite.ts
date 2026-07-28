@@ -11,6 +11,7 @@ import { dbtTaskRuns } from "../schema/sqlite/dbt-task-run";
 import { users } from "../schema/sqlite/user";
 import { agentConversations } from "../schema/sqlite/agent-conversation";
 import { agentMessages } from "../schema/sqlite/agent-message";
+import { agentWorkspaces } from "../schema/sqlite/agent-workspace";
 
 /** dbt_projects → dbt_directories 一对多 + 项目环境绑定 + 任务 */
 export const dbtProjectsRelations = relations(dbtProjects, ({ many }) => ({
@@ -115,13 +116,29 @@ export const dbtTaskRunsRelations = relations(dbtTaskRuns, ({ one }) => ({
   }),
 }));
 
-/** agent_conversations → users + agent_messages 一对多 */
+/** agent_workspaces → users + agent_conversations 一对多 */
+export const agentWorkspacesRelations = relations(
+  agentWorkspaces,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [agentWorkspaces.userId],
+      references: [users.id],
+    }),
+    conversations: many(agentConversations),
+  }),
+);
+
+/** agent_conversations → users + agent_workspaces + agent_messages 一对多 */
 export const agentConversationsRelations = relations(
   agentConversations,
   ({ one, many }) => ({
     user: one(users, {
       fields: [agentConversations.userId],
       references: [users.id],
+    }),
+    workspace: one(agentWorkspaces, {
+      fields: [agentConversations.workspaceId],
+      references: [agentWorkspaces.id],
     }),
     messages: many(agentMessages),
   }),

@@ -9,5 +9,6 @@ export * from "./dbt-project-environment";
 export * from "./dbt-task";
 export * from "./dbt-task-run";
 export * from "./user";
+export * from "./agent-workspace";
 export * from "./agent-conversation";
 export * from "./agent-message";

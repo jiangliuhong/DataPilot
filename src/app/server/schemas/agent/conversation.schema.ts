@@ -1,9 +1,11 @@
 import { z } from "zod";
 
-/** 创建会话请求体校验（title 可选，缺省时 service 用"新对话"） */
-export const createConversationSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-});
+// createConversationSchema / upsertWorkspaceAndCreateConversationSchema
+// 已迁移至 workspace.schema.ts（会话必属 workspace，创建逻辑与之耦合）。
+export {
+  createConversationSchema,
+  upsertWorkspaceAndCreateConversationSchema,
+} from "./workspace.schema";
 
 /** 会话 ID 路径参数校验 */
 export const conversationIdSchema = z.object({

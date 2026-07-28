@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { conversationApi } from "@/web/api-client";
 import type { AgentConversation } from "@/web/types/agent";
 
+/** 创建会话的入参（对应 conversationApi.create 的两种模式） */
+export type CreateConversationInput =
+  | { type: string; refId: number; name: string; title?: string }
+  | { workspaceId: number; title?: string };
+
 interface UseConversationsResult {
   conversations: AgentConversation[];
   total: number;
@@ -13,7 +18,8 @@ interface UseConversationsResult {
   selectedId: number | null;
   refresh: () => Promise<void>;
   select: (id: number | null) => void;
-  create: () => Promise<AgentConversation | null>;
+  /** 创建会话：传 workspace 数据（type/refId/name）或已有 workspaceId */
+  create: (input: CreateConversationInput) => Promise<AgentConversation | null>;
   remove: (id: number) => Promise<boolean>;
   clearError: () => void;
 }
@@ -53,21 +59,24 @@ export function useConversations(): UseConversationsResult {
     setSelectedId(id);
   }, []);
 
-  const create = useCallback(async () => {
-    setCreating(true);
-    setError(null);
-    try {
-      const conversation = await conversationApi.create();
-      setConversations((prev) => [conversation, ...prev]);
-      setSelectedId(conversation.id);
-      return conversation;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "创建会话失败");
-      return null;
-    } finally {
-      setCreating(false);
-    }
-  }, []);
+  const create = useCallback(
+    async (input: CreateConversationInput) => {
+      setCreating(true);
+      setError(null);
+      try {
+        const conversation = await conversationApi.create(input);
+        setConversations((prev) => [conversation, ...prev]);
+        setSelectedId(conversation.id);
+        return conversation;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "创建会话失败");
+        return null;
+      } finally {
+        setCreating(false);
+      }
+    },
+    [],
+  );
 
   const clearError = useCallback(() => {
     setError(null);

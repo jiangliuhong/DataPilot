@@ -2,13 +2,15 @@ import { eq, and, isNull, count, desc } from "drizzle-orm";
 import { db, insertReturningId } from "@/app/db";
 import { agentConversations, type AgentConversation } from "@/app/db/schema";
 
-/** 创建会话（归属当前用户） */
+/** 创建会话（归属当前用户 + 指定 workspace） */
 export async function create(input: {
   userId: number;
+  workspaceId: number;
   title?: string;
 }): Promise<AgentConversation> {
   const { id } = await insertReturningId(agentConversations, {
     userId: input.userId,
+    workspaceId: input.workspaceId,
     title: input.title ?? "新对话",
   });
   const created = await findById(id, input.userId);

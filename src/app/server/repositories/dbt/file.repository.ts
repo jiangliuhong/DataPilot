@@ -1,6 +1,8 @@
+import path from "node:path";
 import { eq, and, isNull, like, count, desc } from "drizzle-orm";
 import { db, insertReturningId } from "@/app/db";
 import { dbtFiles, type NewDbtFile } from "@/app/db/schema";
+import * as directoryRepo from "@/app/server/repositories/dbt/directory.repository";
 
 /** 创建文件 */
 export async function create(data: NewDbtFile) {
@@ -177,4 +179,99 @@ export async function softDeleteByProjectId(projectId: number) {
         isNull(dbtFiles.deletedAt),
       ),
     );
+}
+
+// ===========================================================================
+// 以下方法供 deepagents DbProjectBackend 使用（按路径寻址，而非 fileId）
+// ===========================================================================
+
+/**
+ * 按 (projectId, path) 精确查询文件（排除软删除）。
+ * path 形如 "models/staging/orders.sql"（与 dbt_files.path 列一致，无前导 /）。
+ */
+export async function findByProjectAndPath(projectId: number, filePath: string) {
+  const [row] = await db
+    .select()
+    .from(dbtFiles)
+    .where(
+      and(
+        eq(dbtFiles.projectId, projectId),
+        eq(dbtFiles.path, filePath),
+        isNull(dbtFiles.deletedAt),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * 按 path 写文件（存在则更新内容，不存在则创建）。
+ *
+ * 自动建立所需的父目录（mkdir -p 语义）。计算逻辑参考 file.service.createFile：
+ *   - 根级文件 path=name，directoryId=null
+ *   - 子目录文件 path=`${dir.path}/${name}`
+ *   - size = Buffer.byteLength(content, "utf-8")
+ *
+ * fileType 由调用方传入（通常按扩展名推断）。
+ */
+export async function upsertByPath(input: {
+  projectId: number;
+  /** DB 路径，无前导 /，如 "models/staging/orders.sql" */
+  path: string;
+  content: string;
+  /** 文件类型（按扩展名推断），新建时必填，更新时忽略 */
+  fileType: string;
+}) {
+  const dir = path.posix.dirname(input.path);
+  const name = path.posix.basename(input.path);
+  // dirname 对 "a.sql" 返回 "."，对 "/" 返回 "/"；需归一化为段数组
+  const dirSegments =
+    dir === "." || dir === "/" ? [] : dir.split("/").filter(Boolean);
+
+  const directoryId = await directoryRepo.ensurePath(input.projectId, dirSegments);
+
+  // 按 path 精确判断存在性（与后续 update 用同一把键，避免 name+directoryId
+  // 与 path 不一致时更新到错误文件）。path 是业务唯一键。
+  const existing = await findByProjectAndPath(input.projectId, input.path);
+  if (existing) {
+    return updateByPath(input.projectId, input.path, input.content);
+  }
+
+  // 不存在则创建
+  const created = await create({
+    projectId: input.projectId,
+    directoryId,
+    name,
+    path: input.path,
+    content: input.content,
+    fileType: input.fileType,
+    size: Buffer.byteLength(input.content, "utf-8"),
+  });
+  return created;
+}
+
+/**
+ * 按 path 更新文件内容（重新计算 size，刷新 updatedAt）。
+ * 仅更新 content/size，不改 name/fileType/directoryId。
+ */
+export async function updateByPath(
+  projectId: number,
+  filePath: string,
+  content: string,
+) {
+  await db
+    .update(dbtFiles)
+    .set({
+      content,
+      size: Buffer.byteLength(content, "utf-8"),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(dbtFiles.projectId, projectId),
+        eq(dbtFiles.path, filePath),
+        isNull(dbtFiles.deletedAt),
+      ),
+    );
+  return findByProjectAndPath(projectId, filePath);
 }

@@ -2,6 +2,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { User, Bot } from "lucide-react";
 import ToolCallCard from "./tool-call-card";
+import TodoList from "./todo-list";
+import SubagentPanel from "./subagent-panel";
 import TypingIndicator from "./typing-indicator";
 import type { DisplayMessage } from "../hooks/use-agent-chat";
 
@@ -42,6 +44,14 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         {message.toolCalls.map((tc, idx) => (
           <ToolCallCard key={`${tc.name}-${idx}`} toolCall={tc} />
         ))}
+
+        {/* 任务清单（deepagents write_todos 实时投影） */}
+        {!isUser && message.todos.length > 0 && <TodoList todos={message.todos} />}
+
+        {/* 子 agent 委派 */}
+        {!isUser && message.subagents.length > 0 && (
+          <SubagentPanel subagents={message.subagents} />
+        )}
 
         {/* 文本内容 */}
         {(message.content || message.pending) && (

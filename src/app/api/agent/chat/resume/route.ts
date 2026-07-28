@@ -1,16 +1,20 @@
-import { streamChat } from "@/app/server/agent/project-agent.service";
-import { sendChatSchema } from "@/app/server/schemas/agent/chat.schema";
+import { resumeChat, type ResumeDecision } from "@/app/server/agent/project-agent.service";
+import { resumeChatSchema } from "@/app/server/schemas/agent/chat.schema";
 import {
   handleValidationError,
   notFound,
   apiError,
 } from "@/app/server/errors/api-error";
 import { requireAuth, UnauthorizedError } from "@/app/server/lib/auth-guard";
-import { createAgentSseResponse } from "./sse-response";
+import { createAgentSseResponse } from "../sse-response";
 
-/** POST /api/agent/chat — 流式对话（SSE） */
+/**
+ * POST /api/agent/chat/resume — 恢复因 HITL 中断的 agent 执行（SSE）。
+ *
+ * 用户审批写操作后调用。必须复用同一 conversation（thread_id），
+ * checkpointer 才能恢复中断前的执行态。
+ */
 export async function POST(request: Request) {
-  // 鉴权与请求校验必须在流启动前完成（HTTP 状态码一旦开始流式就无法再改）
   let user;
   try {
     user = await requireAuth();
@@ -21,10 +25,10 @@ export async function POST(request: Request) {
     return apiError("认证失败", 500);
   }
 
-  let body: { conversationId: number; message: string };
+  let body: { conversationId: number; decisions: ResumeDecision[] };
   try {
-    const parsed = sendChatSchema.parse(await request.json());
-    body = parsed;
+    const parsed = resumeChatSchema.parse(await request.json());
+    body = parsed as { conversationId: number; decisions: ResumeDecision[] };
   } catch (error) {
     if (error instanceof Error && "issues" in error) {
       return handleValidationError(error as unknown as import("zod").ZodError);
@@ -41,8 +45,7 @@ export async function POST(request: Request) {
     return notFound("会话不存在");
   }
 
-  // 构建 SSE 流：传入 request.signal 支持前端中止生成
   return createAgentSseResponse(request.signal, (emit) =>
-    streamChat(user.id, body.conversationId, body.message, emit, request.signal),
+    resumeChat(user.id, body.conversationId, body.decisions, emit),
   );
 }

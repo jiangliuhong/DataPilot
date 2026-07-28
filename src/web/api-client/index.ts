@@ -8,5 +8,5 @@ export { projectEnvironmentApi } from "./project-environment";
 export { taskApi } from "./task";
 export { authApi } from "./auth";
 export type { AuthUser } from "./auth";
-export { conversationApi, chatApi, parseSSEStream } from "./agent";
+export { conversationApi, workspaceApi, chatApi, parseSSEStream } from "./agent";
 export { ApiError } from "./request";

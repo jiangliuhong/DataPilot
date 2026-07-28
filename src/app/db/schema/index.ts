@@ -39,6 +39,7 @@ export const dbtTaskRuns = activeSchema.dbtTaskRuns;
 export const users = activeSchema.users;
 export const agentConversations = activeSchema.agentConversations;
 export const agentMessages = activeSchema.agentMessages;
+export const agentWorkspaces = activeSchema.agentWorkspaces;
 
 // Canonical types (always MySQL-shaped, regardless of active dialect).
 export type {
@@ -66,4 +67,6 @@ export type {
   AgentConversation,
   NewAgentMessage,
   AgentMessage,
+  NewAgentWorkspace,
+  AgentWorkspace,
 } from "./mysql";
