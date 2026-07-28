@@ -12,3 +12,4 @@ export * from "./user";
 export * from "./agent-workspace";
 export * from "./agent-conversation";
 export * from "./agent-message";
+export * from "./llm-provider-config";

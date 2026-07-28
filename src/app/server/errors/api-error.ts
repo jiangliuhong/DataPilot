@@ -54,6 +54,15 @@ const FIELD_LABELS: Record<string, string> = {
   runId: "运行记录",
   exitCode: "退出码",
   errorMessage: "错误信息",
+  // 大模型配置
+  provider: "协议供应商",
+  model: "模型",
+  apiKey: "API Key",
+  baseUrl: "Base URL",
+  temperature: "温度",
+  maxTokens: "最大 Tokens",
+  topP: "Top P",
+  isDefault: "设为生效",
 };
 
 /** 把 Zod issue 的英文字段路径翻译成中文标签 */

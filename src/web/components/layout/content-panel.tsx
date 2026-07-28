@@ -7,6 +7,7 @@ import ConnectionList from "@/web/features/dbt-connection/components/connection-
 import EnvironmentList from "@/web/features/dbt-environment/components/environment-list";
 import TaskList from "@/web/features/dbt-task/components/task-list";
 import AgentChatLayout from "@/web/features/agent/components/agent-chat-layout";
+import LlmConfigList from "@/web/features/llm-settings/components/llm-config-list";
 import { Card } from "@heroui/react";
 
 interface ContentPanelProps {
@@ -112,6 +113,7 @@ export default function ContentPanel({
     "dbt-version-list": <VersionList />,
     "dbt-connection-list": <ConnectionList />,
     "dbt-environment-list": <EnvironmentList />,
+    "llm-config-list": <LlmConfigList />,
     "system-settings": <PlaceholderContent title="设置" description="系统配置与参数管理" />,
     "system-users": <PlaceholderContent title="用户" description="用户管理与权限配置" />,
   };

@@ -9,4 +9,5 @@ export { taskApi } from "./task";
 export { authApi } from "./auth";
 export type { AuthUser } from "./auth";
 export { conversationApi, workspaceApi, chatApi, parseSSEStream } from "./agent";
+export { llmSettingsApi } from "./llm-settings";
 export { ApiError } from "./request";

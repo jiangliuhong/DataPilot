@@ -10,6 +10,7 @@ export const menuItems: MenuItem[] = [
     icon: "Settings2",
     group: "system-settings",
     children: [
+      { key: "llm-config-list", label: "大模型配置", icon: "Cpu" },
       { key: "dbt-version-list", label: "dbt 版本管理", icon: "GitBranch" },
       { key: "dbt-connection-list", label: "数据库连接管理", icon: "Database" },
       { key: "dbt-environment-list", label: "运行环境管理", icon: "Server" },

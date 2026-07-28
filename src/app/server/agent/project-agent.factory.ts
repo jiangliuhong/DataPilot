@@ -1,7 +1,8 @@
 import { createDeepAgent } from "deepagents";
 import { MemorySaver } from "@langchain/langgraph";
 import type { AgentWorkspace } from "@/app/db/schema";
-import { createOpenAILLM } from "./llm/providers/openai";
+import { createLLM } from "./llm";
+import type { LlmRuntimeConfig } from "./llm/config";
 import { createBackend } from "./backend";
 import { buildDomainTools } from "./tools";
 
@@ -19,18 +20,23 @@ const checkpointer = new MemorySaver();
 /**
  * 装配一个绑定到指定 workspace 的 deepagents 实例。
  *
- * - model 传 ChatOpenAI 实例（支持自定义 OPENAI_BASE_URL，兼容国产模型）
+ * - model 由调用方（service 层）从 DB 解析配置后注入，工厂本身不碰 DB
  * - backend 按 workspace.type 分发（dbt_project → DbProjectBackend）
  * - permissions 限定虚拟根 /**（backend 已锁 projectId，根即项目根）
  * - interruptOn 拦截写操作，强制人工 approve/edit/reject
  *
- * @param workspace 工作空间（决定 backend 与业务工具集）
- * @param userId    当前用户（业务工具可能用于数据隔离）
+ * @param workspace  工作空间（决定 backend 与业务工具集）
+ * @param userId     当前用户（业务工具可能用于数据隔离）
+ * @param llmConfig  当前生效的大模型运行时配置（已解密）
  */
-export function createProjectAgent(workspace: AgentWorkspace, userId: number) {
+export function createProjectAgent(
+  workspace: AgentWorkspace,
+  userId: number,
+  llmConfig: LlmRuntimeConfig,
+) {
   return createDeepAgent({
     // 传实例而非字符串：字符串形式不支持自定义 base_url
-    model: createOpenAILLM(),
+    model: createLLM(llmConfig),
 
     // 文件系统：DB 桥接，agent 以本 workspace 关联的项目为根
     backend: createBackend(workspace),

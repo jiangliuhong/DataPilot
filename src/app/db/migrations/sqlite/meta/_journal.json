@@ -43,6 +43,13 @@
       "when": 1785221197662,
       "tag": "0005_brainy_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1785253168833,
+      "tag": "0006_giant_katie_power",
+      "breakpoints": true
     }
   ]
 }

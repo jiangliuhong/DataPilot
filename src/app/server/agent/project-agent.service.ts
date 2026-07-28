@@ -5,6 +5,7 @@ import * as workspaceRepo from "@/app/server/repositories/agent/workspace.reposi
 import type { ToolCallRecord } from "@/app/server/repositories/agent/message.repository";
 import type { AgentWorkspace } from "@/app/db/schema";
 import { createProjectAgent } from "./project-agent.factory";
+import { getActiveRuntimeConfig } from "@/app/server/services/settings/llm-provider-config.service";
 import { consumeRunStream } from "./event-bridge";
 import { dbMessagesToLangChain } from "./message-mapper";
 import type { EmitEvent } from "./types";
@@ -79,8 +80,9 @@ export async function streamChat(
     const historyRows = await messageRepo.findByConversationId(conversationId);
     const history = dbMessagesToLangChain(historyRows);
 
-    // 3. 装配 agent（绑定到当前 workspace）
-    const agent = createProjectAgent(workspace, userId);
+    // 3. 装配 agent（绑定到当前 workspace）；DB 为唯一配置源，先取生效配置注入
+    const llmConfig = await getActiveRuntimeConfig();
+    const agent = createProjectAgent(workspace, userId, llmConfig);
 
     // 4. streamEvents(v3) —— 真 token 流式 + 工具调用 + todos + 子 agent + HITL
     const run = await agent.streamEvents(
@@ -156,7 +158,8 @@ export async function resumeChat(
     if (!resolved) return;
     const { workspace } = resolved;
 
-    const agent = createProjectAgent(workspace, userId);
+    const llmConfig = await getActiveRuntimeConfig();
+    const agent = createProjectAgent(workspace, userId, llmConfig);
 
     // 用 Command resume：deepagents HITL 的恢复方式。
     // streamEvents 的第一个参数接受 Command 实例（LangGraph resume 协议）。
