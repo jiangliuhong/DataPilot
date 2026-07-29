@@ -1,7 +1,8 @@
 /**
  * 运行环境 venv 初始化编排。
  *
- * 流程（见 design.md D6）：
+ * 流程（见 openspec / add-runtime-env-initialization：runtime-env-initialization；
+ *   初始化流程决策原编号 design.md D6，已迁入上述 spec）：
  *   1. 校验环境存在；查当前 initializationStatus
  *   2. 若内存锁中已存在该环境 → 抛错（route 返回 409）
  *   3. 置 DB running、publish status:running

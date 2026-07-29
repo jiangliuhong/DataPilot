@@ -94,14 +94,14 @@ export async function renameDirectory(
   const newPath = parentPath ? `${parentPath}/${newName}` : newName;
 
   // 事务中更新当前目录和所有子目录/文件的 path
-  await db.transaction(async () => {
-    await directoryRepo.updateById(directoryId, { name: newName, path: newPath });
+  await db.transaction(async (tx) => {
+    await directoryRepo.updateById(directoryId, { name: newName, path: newPath }, tx);
 
     // 级联更新子目录 path
     const descendants = await directoryRepo.findByPathPrefix(projectId, `${oldPath}/`);
     for (const child of descendants) {
       const childNewPath = newPath + child.path.slice(oldPath.length);
-      await directoryRepo.updateById(child.id, { path: childNewPath });
+      await directoryRepo.updateById(child.id, { path: childNewPath }, tx);
     }
 
     // 级联更新子目录下文件的 path（通过 path 前缀匹配）
@@ -109,7 +109,7 @@ export async function renameDirectory(
     for (const file of filesToUpdate) {
       if (file.path.startsWith(`${oldPath}/`)) {
         const fileNewPath = newPath + file.path.slice(oldPath.length);
-        await fileRepo.updateById(file.id, { path: fileNewPath });
+        await fileRepo.updateById(file.id, { path: fileNewPath }, tx);
       }
     }
   });
@@ -153,12 +153,12 @@ export async function moveDirectory(
     newDepth = 0;
   }
 
-  await db.transaction(async () => {
+  await db.transaction(async (tx) => {
     await directoryRepo.updateById(directoryId, {
       parentId: newParentId,
       path: newPath,
       depth: newDepth,
-    });
+    }, tx);
 
     // 级联更新子目录
     const descendants = await directoryRepo.findByPathPrefix(projectId, `${oldPath}/`);
@@ -168,7 +168,7 @@ export async function moveDirectory(
       await directoryRepo.updateById(child.id, {
         path: childNewPath,
         depth: child.depth + depthDiff,
-      });
+      }, tx);
     }
 
     // 级联更新文件 path
@@ -176,7 +176,7 @@ export async function moveDirectory(
     for (const file of filesToUpdate) {
       if (file.path.startsWith(`${oldPath}/`)) {
         const fileNewPath = newPath + file.path.slice(oldPath.length);
-        await fileRepo.updateById(file.id, { path: fileNewPath });
+        await fileRepo.updateById(file.id, { path: fileNewPath }, tx);
       }
     }
   });
@@ -189,12 +189,12 @@ export async function deleteDirectory(projectId: number, directoryId: number) {
   const dir = await directoryRepo.findById(directoryId);
   if (!dir) throw new Error("Directory not found");
 
-  await db.transaction(async () => {
+  await db.transaction(async (tx) => {
     // 软删除该目录及所有子目录
-    await directoryRepo.softDeleteByPathPrefix(projectId, dir.path);
-    await directoryRepo.softDeleteById(directoryId);
+    await directoryRepo.softDeleteByPathPrefix(projectId, dir.path, tx);
+    await directoryRepo.softDeleteById(directoryId, tx);
 
     // 软删除该目录及子目录下的所有文件
-    await fileRepo.softDeleteByPathPrefix(projectId, `${dir.path}/`);
+    await fileRepo.softDeleteByPathPrefix(projectId, `${dir.path}/`, tx);
   });
 }

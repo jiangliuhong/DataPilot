@@ -36,6 +36,15 @@ export const db = rawDb as unknown as MySql2Database<typeof schema>;
 export type Database = typeof db;
 
 /**
+ * Repository 用于「在事务内执行 vs 走全局 db」的统一客户端类型。
+ *
+ * 取 db 的 select/insert/update 子集：事务回调传入的 tx 与全局 db 都满足该结构，
+ * 因此 repository 方法可用 `tx?: DbClient` 接收事务上下文，缺省回退到全局 db。
+ *（见 harden-dbt-construction-flow / dbt-transaction-integrity）
+ */
+export type DbClient = Pick<Database, "select" | "insert" | "update">;
+
+/**
  * 跨驱动的「插入并返回自增主键」封装。
  *
  * - MySQL：使用 drizzle 的 `.$returningId()`（MySQL 原生不支持 RETURNING）。
@@ -46,10 +55,13 @@ export type Database = typeof db;
 export async function insertReturningId<TTable extends { id: unknown }>(
   table: TTable,
   data: object,
+  tx?: DbClient,
 ): Promise<{ id: number }> {
+  // tx 提供时在事务内插入，否则用全局 db（保持非事务调用路径零改动）
+  const client = (tx ?? db) as typeof db;
   if (isSQLite) {
     // SQLite 支持原生 RETURNING
-    const [row] = await (db as unknown as {
+    const [row] = await (client as unknown as {
       insert: (t: TTable) => {
         values: (d: object) => {
           returning: (fields: { id: unknown }) => Promise<{ id: number }[]>;
@@ -62,7 +74,7 @@ export async function insertReturningId<TTable extends { id: unknown }>(
     return { id: row.id };
   }
   // MySQL：drizzle 提供 $returningId() 辅助方法
-  const [row] = await (db as unknown as {
+  const [row] = await (client as unknown as {
     insert: (t: TTable) => {
       values: (d: object) => {
         $returningId: () => Promise<{ id: number }[]>;

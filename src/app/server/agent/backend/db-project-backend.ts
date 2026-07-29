@@ -14,6 +14,7 @@ import type {
 import micromatch from "micromatch";
 import * as fileRepo from "@/app/server/repositories/dbt/file.repository";
 import * as directoryRepo from "@/app/server/repositories/dbt/directory.repository";
+import { validateDbtContent } from "../validation/dbt-content-validator";
 import {
   basenameOf,
   dbToVirtualPath,
@@ -154,6 +155,12 @@ export class DbProjectBackend implements BackendProtocolV2 {
       const dbPath = virtualToDbPath(filePath);
       if (dbPath === "") return { error: "路径是目录，无法写入文件" };
 
+      // 落库前内容校验：失败则回执错误给 agent 自我修正，不持久化
+      const validation = validateDbtContent(dbPath, content);
+      if (!validation.ok) {
+        return { error: validation.error ?? "文件内容校验失败" };
+      }
+
       const file = await fileRepo.upsertByPath({
         projectId: this.projectId,
         path: dbPath,
@@ -197,6 +204,11 @@ export class DbProjectBackend implements BackendProtocolV2 {
 
       // 空文件 + 空 oldString → 初始化内容
       if (content === "" && oldString === "") {
+        // 落库前内容校验
+        const initValidation = validateDbtContent(dbPath, newString);
+        if (!initValidation.ok) {
+          return { error: initValidation.error ?? "文件内容校验失败" };
+        }
         await fileRepo.updateByPath(this.projectId, dbPath, newString);
         return { path: dbToVirtualPath(dbPath), occurrences: 0, filesUpdate: null };
       }
@@ -218,6 +230,12 @@ export class DbProjectBackend implements BackendProtocolV2 {
       const updated = replaceAll
         ? content.split(oldString).join(newString)
         : content.replace(oldString, newString);
+
+      // 落库前对替换后的整体内容做校验
+      const updateValidation = validateDbtContent(dbPath, updated);
+      if (!updateValidation.ok) {
+        return { error: updateValidation.error ?? "文件内容校验失败" };
+      }
 
       await fileRepo.updateByPath(this.projectId, dbPath, updated);
       return {

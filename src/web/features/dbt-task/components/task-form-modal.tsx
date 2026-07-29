@@ -51,7 +51,6 @@ export default function TaskFormModal({
   const [excludeArg, setExcludeArg] = useState("");
   const [fullRefresh, setFullRefresh] = useState(false);
   const [vars, setVars] = useState("");
-  const [target, setTarget] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bindings, setBindings] = useState<ProjectEnvironment[]>([]);
@@ -96,7 +95,6 @@ export default function TaskFormModal({
       setExcludeArg(task.exclude ?? "");
       setFullRefresh(task.fullRefresh);
       setVars(task.vars ?? "");
-      setTarget(task.target ?? "");
     } else {
       setName("");
       setEnvironmentId(null);
@@ -105,7 +103,6 @@ export default function TaskFormModal({
       setExcludeArg("");
       setFullRefresh(false);
       setVars("");
-      setTarget("");
     }
     setError(null);
   }, [task, isOpen]);
@@ -128,7 +125,6 @@ export default function TaskFormModal({
         exclude: excludeArg.trim() || undefined,
         fullRefresh,
         vars: vars.trim() || undefined,
-        target: target.trim() || undefined,
       };
       await onSubmit(payload);
       onClose();
@@ -272,20 +268,6 @@ export default function TaskFormModal({
                   value={vars}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setVars(e.target.value)}
                 />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="task-target">--target</Label>
-                <Input
-                  id="task-target"
-                  fullWidth
-                  placeholder="第一阶段忽略，profile 仅生成 default target"
-                  value={target}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTarget(e.target.value)}
-                />
-                <p className="text-xs text-default-400">
-                  第一阶段 profile 仅生成 default target，--target 参数暂不生效。
-                </p>
               </div>
 
               <div className="flex flex-col gap-1">

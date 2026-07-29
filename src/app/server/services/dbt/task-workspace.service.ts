@@ -1,11 +1,12 @@
 /**
  * 任务运行工作区实例化与 dbt profile 生成。
  *
- * 见 design.md D3 / D3.1 / D8：
+ * 见 openspec specs（harden-dbt-construction-flow / dbt-task-execution）：
  *   - 每次运行从 DB 全量导出项目文件到 <workspaceRoot>/<projectId>/<runId>/
  *   - 生成单 target `default` 的 profiles.yml，连接字段来自 task.environment.connection
  *   - profile 名 = 项目名 slug 化
  *   - 运行结束由 task-execution.service 在 finally 中清理
+ * （profile/workspace 决策原编号 design.md D3/D3.1/D8，已迁入上述 spec）
  *
  * 安全加固（review round 1 修复）：
  *   - 文件路径做 containment 校验，防止 file.path 含 ../ 越界（W3）
@@ -184,6 +185,36 @@ export function generateDbtProjectYml(params: { projectName: string }): string {
 }
 
 /**
+ * 校验项目内 dbt_project.yml 的 `profile:` 字段与生成的 profiles.yml 顶层 key 一致。
+ *
+ * 见 harden-dbt-construction-flow / dbt-task-execution:
+ *   "dbt_project.yml source preference and profile consistency"。
+ * 不一致时抛错中止运行，防止导入的项目指向外部 profile 名导致连错库。
+ *
+ * 采用轻量正则解析（避免引入完整 YAML 依赖）：仅取首个顶层 `profile:` 标量。
+ */
+function assertDbtProjectProfileConsistent(
+  dbtProjectYmlContent: string,
+  projectName: string,
+): void {
+  const expected = slugifyProfileName(projectName);
+  const match = dbtProjectYmlContent.match(/^\s*profile:\s*(\S+)\s*$/m);
+  if (!match) {
+    throw new Error(
+      "项目内 dbt_project.yml 缺少 profile 字段，请补全后再运行",
+    );
+  }
+  // 去除可能的引号包裹
+  const declared = match[1].replace(/^["']|["']$/g, "");
+  if (declared !== expected) {
+    throw new Error(
+      `项目内 dbt_project.yml 的 profile("${declared}")与运行环境生成的 profile 名("${expected}")不一致，` +
+        `请将 profile 改为 "${expected}" 后重试`,
+    );
+  }
+}
+
+/**
  * 校验文件路径不会逃出工作区目录（防止 file.path 含 ../ 越界）。
  * 拒绝绝对路径与 .. 上溯。
  */
@@ -237,11 +268,15 @@ export async function materializeWorkspace(params: {
       { encoding: "utf8", mode: PROFILE_FILE_MODE },
     );
 
-    // 3. 生成 dbt_project.yml（仅当项目中未显式管理时）
-    const hasProjectYml = files.some(
+    // 3. dbt_project.yml：优先用项目内文件（导入的真实配置），
+    //    仅当缺失时才生成最小化版本（见 spec：dbt_project.yml source preference）。
+    //    使用项目内文件时需校验 profile 名一致性，防止连错库。
+    const projectYmlFile = files.find(
       (f) => f.path === "dbt_project.yml" || f.path === "./dbt_project.yml",
     );
-    if (!hasProjectYml) {
+    if (projectYmlFile) {
+      assertDbtProjectProfileConsistent(projectYmlFile.content, projectName);
+    } else {
       const projectYml = generateDbtProjectYml({ projectName });
       await fs.writeFile(path.join(workspaceDir, "dbt_project.yml"), projectYml, "utf8");
     }

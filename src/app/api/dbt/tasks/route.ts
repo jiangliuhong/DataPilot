@@ -1,6 +1,5 @@
 import { type NextRequest } from "next/server";
 import * as taskService from "@/app/server/services/dbt/task.service";
-import * as taskRepo from "@/app/server/repositories/dbt/task.repository";
 import {
   createTaskSchema,
   listTasksQuerySchema,
@@ -31,18 +30,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST /api/dbt/tasks — 创建任务 */
+/** POST /api/dbt/tasks — 创建任务（唯一性/绑定/兼容性校验均在 service 层） */
 export async function POST(request: Request) {
   try {
     await requireAuth();
     const body = await request.json();
     const data = createTaskSchema.parse(body);
-
-    // 项目内 name 唯一性预检（service 内会再校验一次，这里提前返回 409 更语义化）
-    const existing = await taskRepo.findByNameInProject(data.projectId, data.name);
-    if (existing) {
-      return conflict("任务名称在项目内已存在");
-    }
 
     const task = await taskService.createTask(data);
     return Response.json(task, { status: 201 });

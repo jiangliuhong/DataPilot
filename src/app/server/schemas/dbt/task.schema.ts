@@ -46,6 +46,8 @@ export const createTaskSchema = z.object({
   exclude: z.string().max(2000).optional(),
   fullRefresh: z.boolean().optional(),
   vars: varsSchema.optional(),
+  // Phase-1 reserved: 字段保留以兼容数据模型，但第一阶段不参与命令构建
+  //（profiles.yml 仅生成 default target）。见 harden-dbt-construction-flow / dbt-task-management。
   target: z.string().max(255).optional(),
 });
 
@@ -59,6 +61,7 @@ export const updateTaskSchema = z.object({
   exclude: z.string().max(2000).optional(),
   fullRefresh: z.boolean().optional(),
   vars: varsSchema.optional(),
+  // Phase-1 reserved: 见 createTaskSchema 同名字段注释
   target: z.string().max(255).optional(),
 });
 

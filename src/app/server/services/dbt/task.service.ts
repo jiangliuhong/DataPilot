@@ -1,9 +1,11 @@
 /**
  * 任务 CRUD 编排与运行记录查询。
  *
- * 见 design.md D5 / D8：
- *   - createTask：校验环境已绑定项目 + 项目内 name 唯一 + 适配器兼容性
- *   - listTaskRuns：内部惰性调用 reconcileStaleRuns（O3）
+ * 见 openspec specs：
+ *   - dbt-task-management：createTask 校验环境已绑定项目 + 项目内 name 唯一
+ *     + 适配器兼容性（适配器校验原编号 design.md D8，已迁入 spec）
+ *   - dbt-task-execution / Stale run reconciliation：listTaskRuns 内部惰性调用
+ *     reconcileStaleRuns（原编号 O3），并在模块加载时主动调用一次
  */
 import * as taskRepo from "@/app/server/repositories/dbt/task.repository";
 import * as taskRunRepo from "@/app/server/repositories/dbt/task-run.repository";
@@ -17,6 +19,7 @@ import {
 } from "@/app/server/schemas/dbt/task.schema";
 import type { z } from "zod";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "@/app/server/configs/dbt/constants";
+import { validateAdapterCompatibility } from "./shared/adapter-compatibility";
 
 /** 由 Zod schema 推导的输入类型，避免手写类型与 schema 漂移（S6） */
 type CreateTaskInput = z.infer<typeof createTaskSchema>;
@@ -28,20 +31,27 @@ type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
  */
 const STALE_RUN_THRESHOLD_MS = 60 * 60 * 1000; // 1h
 
-/** 适配器兼容性校验（复用 environment.service 的逻辑，任务层面再做一次以防御环境后续换连接） */
-function validateAdapterCompatibility(
-  adapterPackages: { name: string; version: string; supportedDatabases: string[] }[],
-  databaseType: string,
-): void {
-  const supported = adapterPackages.some((pkg) =>
-    // 空数组视为通配：不限定数据库类型，视为支持所有数据库
-    pkg.supportedDatabases.length === 0
-      ? true
-      : pkg.supportedDatabases.includes(databaseType),
-  );
-  if (!supported) {
-    throw new Error(`该版本的适配器包不支持 ${databaseType} 数据库类型`);
+/**
+ * 解析运行环境及其 version/connection，并校验适配器兼容性。
+ * createTask 与 updateTask 共用，避免「查 version+connection 并校验」逻辑重复。
+ */
+async function resolveAndValidateAdapter(environmentId: number) {
+  const environment = await environmentRepo.findById(environmentId);
+  if (!environment) {
+    throw new Error("运行环境不存在");
   }
+  const version = await versionRepo.findById(environment.versionId);
+  if (!version) {
+    throw new Error("dbt 版本不存在");
+  }
+  const connection = await connectionRepo.findById(environment.connectionId);
+  if (!connection) {
+    throw new Error("数据库连接不存在");
+  }
+  validateAdapterCompatibility(
+    version.adapterPackages ?? [],
+    connection.databaseType,
+  );
 }
 
 /** 创建任务（含项目绑定校验、name 唯一校验、适配器兼容性校验） */
@@ -59,22 +69,7 @@ export async function createTask(data: CreateTaskInput) {
   }
 
   // 适配器兼容性校验（D8）
-  const environment = await environmentRepo.findById(data.environmentId);
-  if (!environment) {
-    throw new Error("运行环境不存在");
-  }
-  const version = await versionRepo.findById(environment.versionId);
-  if (!version) {
-    throw new Error("dbt 版本不存在");
-  }
-  const connection = await connectionRepo.findById(environment.connectionId);
-  if (!connection) {
-    throw new Error("数据库连接不存在");
-  }
-  validateAdapterCompatibility(
-    version.adapterPackages ?? [],
-    connection.databaseType,
-  );
+  await resolveAndValidateAdapter(data.environmentId);
 
   return taskRepo.createTask(data);
 }
@@ -122,22 +117,7 @@ export async function updateTask(
     if (!binding) {
       throw new Error("该运行环境未绑定到指定项目");
     }
-    const environment = await environmentRepo.findById(newEnvironmentId);
-    if (!environment) {
-      throw new Error("运行环境不存在");
-    }
-    const version = await versionRepo.findById(environment.versionId);
-    if (!version) {
-      throw new Error("dbt 版本不存在");
-    }
-    const connection = await connectionRepo.findById(environment.connectionId);
-    if (!connection) {
-      throw new Error("数据库连接不存在");
-    }
-    validateAdapterCompatibility(
-      version.adapterPackages ?? [],
-      connection.databaseType,
-    );
+    await resolveAndValidateAdapter(newEnvironmentId);
   }
 
   return taskRepo.updateById(id, data);

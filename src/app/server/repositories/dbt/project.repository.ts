@@ -1,10 +1,10 @@
 import { eq, and, isNull, like, sql, count, desc } from "drizzle-orm";
-import { db, insertReturningId } from "@/app/db";
+import { db, insertReturningId, type DbClient } from "@/app/db";
 import { dbtProjects, type NewDbtProject } from "@/app/db/schema";
 
 /** 创建项目 */
-export async function createProject(data: NewDbtProject) {
-  const { id } = await insertReturningId(dbtProjects, data);
+export async function createProject(data: NewDbtProject, tx?: DbClient) {
+  const { id } = await insertReturningId(dbtProjects, data, tx);
   return findById(id);
 }
 
@@ -75,9 +75,10 @@ export async function updateById(
 }
 
 /** 软删除项目 */
-export async function softDeleteById(id: number) {
+export async function softDeleteById(id: number, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtProjects)
     .set({ deletedAt: now, updatedAt: now })
     .where(eq(dbtProjects.id, id));

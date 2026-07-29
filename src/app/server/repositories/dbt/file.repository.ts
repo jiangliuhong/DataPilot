@@ -1,12 +1,12 @@
 import path from "node:path";
 import { eq, and, isNull, like, count, desc } from "drizzle-orm";
-import { db, insertReturningId } from "@/app/db";
+import { db, insertReturningId, type DbClient } from "@/app/db";
 import { dbtFiles, type NewDbtFile } from "@/app/db/schema";
 import * as directoryRepo from "@/app/server/repositories/dbt/directory.repository";
 
 /** 创建文件 */
-export async function create(data: NewDbtFile) {
-  const { id } = await insertReturningId(dbtFiles, data);
+export async function create(data: NewDbtFile, tx?: DbClient) {
+  const { id } = await insertReturningId(dbtFiles, data, tx);
   return findById(id);
 }
 
@@ -119,8 +119,10 @@ export async function findAllByProjectId(projectId: number) {
 export async function updateById(
   id: number,
   data: Partial<Pick<NewDbtFile, "name" | "content" | "fileType" | "size" | "directoryId" | "path">>,
+  tx?: DbClient,
 ) {
-  await db
+  const client = tx ?? db;
+  await client
     .update(dbtFiles)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(dbtFiles.id, id), isNull(dbtFiles.deletedAt)));
@@ -128,18 +130,20 @@ export async function updateById(
 }
 
 /** 软删除文件 */
-export async function softDeleteById(id: number) {
+export async function softDeleteById(id: number, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtFiles)
     .set({ deletedAt: now, updatedAt: now })
     .where(eq(dbtFiles.id, id));
 }
 
 /** 按路径前缀批量软删除文件（目录级联删除时使用） */
-export async function softDeleteByPathPrefix(projectId: number, pathPrefix: string) {
+export async function softDeleteByPathPrefix(projectId: number, pathPrefix: string, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtFiles)
     .set({ deletedAt: now, updatedAt: now })
     .where(
@@ -168,9 +172,10 @@ export async function softDeleteByDirectoryIds(projectId: number, directoryIds: 
 }
 
 /** 软删除项目下所有文件 */
-export async function softDeleteByProjectId(projectId: number) {
+export async function softDeleteByProjectId(projectId: number, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtFiles)
     .set({ deletedAt: now, updatedAt: now })
     .where(
@@ -258,8 +263,10 @@ export async function updateByPath(
   projectId: number,
   filePath: string,
   content: string,
+  tx?: DbClient,
 ) {
-  await db
+  const client = tx ?? db;
+  await client
     .update(dbtFiles)
     .set({
       content,

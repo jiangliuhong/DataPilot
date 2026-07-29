@@ -1,13 +1,14 @@
 /**
  * dbt 任务执行编排。
  *
- * 见 design.md D2 / D3 / D4：
+ * 见 openspec specs（harden-dbt-construction-flow / dbt-task-execution）：
  *   1. 校验任务存在、未软删、环境 active 且 initialized、连接存在
  *   2. 查重：runningTaskIds.has(taskId) → CONFLICT
  *   3. 插入 queued 运行记录 → 加锁 → 置 running + publish status
  *   4. setImmediate 异步执行工作函数，service 立即返回
  *   5. 工作函数：materialize workspace → spawnStreaming dbt → 终态落库 + publish done
  *   6. finally 清理 workspace + 释放锁
+ * （执行/物化/命令拼装的决策原编号 design.md D2/D3/D4，已迁入上述 spec）
  *
  * 实时事件主题：task:<runId>:run
  *   - status: { status: "running", step }
@@ -39,6 +40,7 @@ import {
   materializeWorkspace,
   cleanupWorkspace,
 } from "./task-workspace.service";
+import { parseProject } from "./task-parse.service";
 import { reconcileStaleRuns } from "./task.service";
 import type { DbtTask } from "@/app/db/schema";
 
@@ -63,11 +65,12 @@ function truncateError(message: string): string {
 }
 
 /**
- * 拼 dbt 命令（D4）。
+ * 拼 dbt 命令（见 harden-dbt-construction-flow / dbt-task-execution: dbt command construction）。
  *
  * - command = <venvPath>/<binDir>/dbt
  * - args = [task.command, --select?, --exclude?, --full-refresh?, --vars?, --profiles-dir, --project-dir, --no-use-colors]
- * - 注意：D3.1 / R14 决定 profile 是单 target default，故 task.target 第一阶段忽略（不拼进 args）
+ * - Phase-1 `--target` 不拼入：profile 仅生成 default target，task.target 是保留字段
+ *   （决策原编号 design.md R14，已迁入上述 spec）。
  */
 export function buildDbtCommand(
   task: Pick<DbtTask, "command" | "select" | "exclude" | "fullRefresh" | "vars">,
@@ -133,6 +136,13 @@ async function runExecution(runId: number, taskId: number): Promise<void> {
       projectName: project.name,
       connection,
     });
+
+    // dbt parse 预检：把 SQL/YAML/ref 语法错误前置，失败则直接置 failed，不浪费完整 run
+    publish(t, "status", { status: "running", step: "parsing" });
+    const parseResult = await parseProject(environment.venvPath, workspaceDir);
+    if (!parseResult.ok) {
+      throw new Error(parseResult.error ?? "dbt parse 失败");
+    }
 
     // 执行 dbt
     publish(t, "status", { status: "running", step: "executing-dbt" });

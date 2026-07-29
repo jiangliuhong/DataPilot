@@ -2,27 +2,10 @@ import * as environmentRepo from "@/app/server/repositories/dbt/environment.repo
 import * as versionRepo from "@/app/server/repositories/dbt/version.repository";
 import * as connectionRepo from "@/app/server/repositories/dbt/connection.repository";
 import * as projectEnvRepo from "@/app/server/repositories/dbt/project-environment.repository";
+import { validateAdapterCompatibility } from "./shared/adapter-compatibility";
 import { rm } from "node:fs/promises";
 
 export { initializeEnvironment } from "./environment-init.service";
-
-/** 适配器兼容性校验 */
-function validateAdapterCompatibility(
-  adapterPackages: { name: string; version: string; supportedDatabases: string[] }[],
-  databaseType: string,
-): void {
-  const supported = adapterPackages.some((pkg) =>
-    // 空数组视为通配：不限定数据库类型，视为支持所有数据库
-    pkg.supportedDatabases.length === 0
-      ? true
-      : pkg.supportedDatabases.includes(databaseType),
-  );
-  if (!supported) {
-    throw new Error(
-      `该版本的适配器包不支持 ${databaseType} 数据库类型`,
-    );
-  }
-}
 
 /** 创建运行环境（含适配器校验） */
 export async function createEnvironment(data: {

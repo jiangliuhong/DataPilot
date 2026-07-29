@@ -1,13 +1,13 @@
 import { eq, and, isNull, like, sql } from "drizzle-orm";
-import { db, insertReturningId } from "@/app/db";
+import { db, insertReturningId, type DbClient } from "@/app/db";
 import {
   dbtDirectories,
   type NewDbtDirectory,
 } from "@/app/db/schema";
 
 /** 创建目录 */
-export async function create(data: NewDbtDirectory) {
-  const { id } = await insertReturningId(dbtDirectories, data);
+export async function create(data: NewDbtDirectory, tx?: DbClient) {
+  const { id } = await insertReturningId(dbtDirectories, data, tx);
   return findById(id);
 }
 
@@ -79,8 +79,10 @@ export async function findByParentId(projectId: number, parentId: number | null)
 export async function updateById(
   id: number,
   data: Partial<Pick<NewDbtDirectory, "name" | "parentId" | "path" | "depth" | "sortOrder">>,
+  tx?: DbClient,
 ) {
-  await db
+  const client = tx ?? db;
+  await client
     .update(dbtDirectories)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(dbtDirectories.id, id), isNull(dbtDirectories.deletedAt)));
@@ -88,18 +90,20 @@ export async function updateById(
 }
 
 /** 软删除目录 */
-export async function softDeleteById(id: number) {
+export async function softDeleteById(id: number, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtDirectories)
     .set({ deletedAt: now, updatedAt: now })
     .where(eq(dbtDirectories.id, id));
 }
 
 /** 按路径前缀批量软删除（级联删除子目录） */
-export async function softDeleteByPathPrefix(projectId: number, pathPrefix: string) {
+export async function softDeleteByPathPrefix(projectId: number, pathPrefix: string, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtDirectories)
     .set({ deletedAt: now, updatedAt: now })
     .where(
@@ -110,9 +114,10 @@ export async function softDeleteByPathPrefix(projectId: number, pathPrefix: stri
     );
 }
 
-/** 按路径前缀查询所有目录（用于移动时级联更新） */
-export async function findByPathPrefix(projectId: number, pathPrefix: string) {
-  return db
+/** 按路径前缀查询所有目录（用于移动时级联更新 / 导入时查找父目录） */
+export async function findByPathPrefix(projectId: number, pathPrefix: string, tx?: DbClient) {
+  const client = tx ?? db;
+  return client
     .select()
     .from(dbtDirectories)
     .where(
@@ -125,9 +130,10 @@ export async function findByPathPrefix(projectId: number, pathPrefix: string) {
 }
 
 /** 软删除项目下所有目录 */
-export async function softDeleteByProjectId(projectId: number) {
+export async function softDeleteByProjectId(projectId: number, tx?: DbClient) {
+  const client = tx ?? db;
   const now = new Date();
-  await db
+  await client
     .update(dbtDirectories)
     .set({ deletedAt: now, updatedAt: now })
     .where(

@@ -53,7 +53,7 @@ export async function importProject(projectId: number, zipBuffer: Buffer): Promi
   }
 
   // 事务中执行导入
-  await db.transaction(async () => {
+  await db.transaction(async (tx) => {
     // 按路径深度排序，确保父目录先创建
     const sortedDirs = Array.from(dirPaths).sort(
       (a, b) => a.split("/").length - b.split("/").length,
@@ -67,11 +67,11 @@ export async function importProject(projectId: number, zipBuffer: Buffer): Promi
       const depth = parentSegments.length;
       const parentId: number | null = null; // 先不关联 parentId，后续通过 path 查找
 
-      // 查找父目录 ID
+      // 查找父目录 ID（须用同一 tx，才能看到本事务内刚插入的未提交目录）
       let resolvedParentId: number | null = null;
       if (parentSegments.length > 0) {
         const parentPath = parentSegments.join("/");
-        const parentDirs = await directoryRepo.findByPathPrefix(projectId, parentPath);
+        const parentDirs = await directoryRepo.findByPathPrefix(projectId, parentPath, tx);
         const parent = parentDirs.find((d) => d.path === parentPath);
         if (parent) resolvedParentId = parent.id;
       }
@@ -82,7 +82,7 @@ export async function importProject(projectId: number, zipBuffer: Buffer): Promi
         name,
         path: dirPath,
         depth,
-      });
+      }, tx);
       result.directories++;
     }
 
@@ -92,11 +92,11 @@ export async function importProject(projectId: number, zipBuffer: Buffer): Promi
       const fileName = segments[segments.length - 1];
       const dirSegments = segments.slice(0, -1);
 
-      // 查找所属目录
+      // 查找所属目录（须用同一 tx）
       let directoryId: number | null = null;
       if (dirSegments.length > 0) {
         const dirPath = dirSegments.join("/");
-        const dirs = await directoryRepo.findByPathPrefix(projectId, dirPath);
+        const dirs = await directoryRepo.findByPathPrefix(projectId, dirPath, tx);
         const dir = dirs.find((d) => d.path === dirPath);
         if (dir) directoryId = dir.id;
       }
@@ -114,7 +114,7 @@ export async function importProject(projectId: number, zipBuffer: Buffer): Promi
         content: fileEntry.content,
         fileType,
         size: Buffer.byteLength(fileEntry.content, "utf-8"),
-      });
+      }, tx);
       result.files++;
     }
   });

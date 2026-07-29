@@ -18,9 +18,15 @@ export const SUPPORTED_FILE_TYPES = [
   "txt",
 ] as const;
 
-/** 导入时跳过的系统级配置文件 */
+/**
+ * 导入时跳过的系统级配置文件。
+ *
+ * 注：dbt_project.yml 不再跳过——导入真实项目时应保留其 model-paths / profile 等配置，
+ * 运行物化时优先使用项目内文件（见 harden-dbt-construction-flow / dbt-task-execution:
+ * dbt_project.yml source preference and profile consistency）。
+ * packages.yml 仍跳过，因其依赖安装是独立关注点。
+ */
 export const SKIP_IMPORT_FILES = [
-  "dbt_project.yml",
   "packages.yml",
 ] as const;
 
